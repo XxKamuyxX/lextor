@@ -4,7 +4,31 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { MENSAGEM_ACESSO_NEGADO } from "@/lib/acesso";
+import { MENSAGEM_ACESSO_NEGADO, normalizeEmail } from "@/lib/acesso";
+
+function mapSignInError(signInError) {
+  const msg = signInError?.message?.toLowerCase() ?? "";
+  const status = signInError?.status;
+
+  if (
+    status === 429 ||
+    msg.includes("rate") ||
+    msg.includes("too many") ||
+    signInError?.code === "over_email_send_rate_limit"
+  ) {
+    return "Limite de envios atingido. Aguarde cerca de 1 hora antes de pedir outro link.";
+  }
+
+  if (msg.includes("invalid") && msg.includes("email")) {
+    return "E-mail inválido. Confira se não há espaços ou caracteres extras.";
+  }
+
+  if (msg.includes("redirect") || msg.includes("url")) {
+    return "URL de retorno não autorizada no Supabase. Adicione https://alexjdantas.com/auth/callback em Redirect URLs.";
+  }
+
+  return "Não foi possível enviar o link. Verifique o e-mail e tente novamente.";
+}
 
 export default function LoginForm() {
   const searchParams = useSearchParams();
@@ -28,11 +52,19 @@ export default function LoginForm() {
     setMessage(null);
     setError(null);
 
+    const emailNormalizado = normalizeEmail(email);
+
+    if (!emailNormalizado || !emailNormalizado.includes("@")) {
+      setError("Informe um e-mail válido, sem espaços.");
+      setLoading(false);
+      return;
+    }
+
     try {
       const check = await fetch("/api/auth/verificar-acesso", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email: emailNormalizado }),
       });
 
       const { autorizado, message: deniedMessage } = await check.json();
@@ -46,17 +78,17 @@ export default function LoginForm() {
       const siteUrl =
         process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin;
 
+      const redirectTo = `${siteUrl.replace(/\/$/, "")}/auth/callback?next=/dashboard`;
+
       const { error: signInError } = await supabase.auth.signInWithOtp({
-        email: email.trim().toLowerCase(),
+        email: emailNormalizado,
         options: {
-          emailRedirectTo: `${siteUrl}/auth/callback?next=/dashboard`,
+          emailRedirectTo: redirectTo,
         },
       });
 
       if (signInError) {
-        setError(
-          "Não foi possível enviar o link. Verifique o e-mail e tente novamente."
-        );
+        setError(mapSignInError(signInError));
         return;
       }
 
@@ -110,10 +142,12 @@ export default function LoginForm() {
             <input
               id="email"
               type="email"
+              inputMode="email"
+              autoComplete="email"
               required
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="seu@email.com"
+              onChange={(e) => setEmail(normalizeEmail(e.target.value))}
+              placeholder="poucavistavidelonge@gmail.com"
               className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950/60 px-4 py-3 text-sm text-white placeholder:text-slate-500 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/25"
             />
           </div>

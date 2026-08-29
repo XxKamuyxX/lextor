@@ -3,10 +3,12 @@ import { LandingHeader } from "@/components/landing/header";
 import { LandingHero } from "@/components/landing/hero";
 import { LandingServices } from "@/components/landing/services";
 import { LandingFooter } from "@/components/landing/footer";
+import { AuthCodeRedirect } from "@/components/auth-code-redirect";
 
 export default function HomePage() {
   return (
     <div className="min-h-screen flex flex-col">
+      <AuthCodeRedirect />
       <LandingHeader />
       <main className="flex-1">
         <LandingHero />
