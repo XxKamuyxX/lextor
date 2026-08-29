@@ -59,6 +59,17 @@ export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isLoginRoute = pathname === "/login";
 
+  // Magic Link às vezes cai na Site URL (/) com ?code= — redireciona pro callback
+  const authCode = request.nextUrl.searchParams.get("code");
+  if (authCode && pathname !== "/auth/callback") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/auth/callback";
+    if (!url.searchParams.has("next")) {
+      url.searchParams.set("next", "/dashboard");
+    }
+    return NextResponse.redirect(url);
+  }
+
   if (isProtectedPath(pathname) && !user) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";

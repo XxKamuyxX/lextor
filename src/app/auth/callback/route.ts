@@ -23,7 +23,12 @@ export async function GET(request: Request) {
         return NextResponse.redirect(`${origin}/login?error=nao_autorizado`);
       }
 
-      return NextResponse.redirect(`${origin}${next}`);
+      const destino =
+        next === "/dashboard" && !cliente.perfil_suitability
+          ? "/onboarding"
+          : next;
+
+      return NextResponse.redirect(`${origin}${destino}`);
     }
   }
 
