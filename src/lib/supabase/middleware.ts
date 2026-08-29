@@ -58,6 +58,7 @@ export async function updateSession(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
   const isLoginRoute = pathname === "/login";
+  const authCode = request.nextUrl.searchParams.get("code");
 
   // Erros do Magic Link na home (?error=access_denied&error_code=otp_expired)
   const authError = request.nextUrl.searchParams.get("error");
