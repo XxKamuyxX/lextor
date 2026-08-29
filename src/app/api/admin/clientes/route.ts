@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { randomUUID } from "crypto";
 import { requireAdminSession } from "@/lib/admin-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizeEmail } from "@/lib/acesso";
@@ -91,7 +90,7 @@ export async function POST(request: Request) {
 
     const { data, error } = await supabase
       .from("clientes")
-      .insert({ id: randomUUID(), email, nome, cpf, acesso_liberado })
+      .insert({ email, nome, cpf, acesso_liberado })
       .select("*")
       .single();
 
