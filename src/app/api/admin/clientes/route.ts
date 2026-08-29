@@ -2,7 +2,14 @@ import { NextResponse } from "next/server";
 import { requireAdminSession } from "@/lib/admin-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizeEmail } from "@/lib/acesso";
+import {
+  provisionarSenhaCliente,
+  salvarSenhaAcesso,
+} from "@/lib/auth-users";
 import { isCpfValido, normalizeCpf } from "@/lib/cpf";
+
+const CLIENTE_FIELDS =
+  "id, email, nome, cpf, acesso_liberado, perfil_suitability, created_at, user_id, senha_acesso";
 
 function errPayload(err: unknown) {
   const e = err as { status?: number; message?: string };
@@ -19,15 +26,15 @@ export async function GET() {
 
     const { data, error } = await supabase
       .from("clientes")
-      .select(
-        "id, email, nome, cpf, acesso_liberado, perfil_suitability, created_at, user_id"
-      )
+      .select(CLIENTE_FIELDS)
       .order("created_at", { ascending: false });
 
     if (error) {
       const fallback = await supabase
         .from("clientes")
-        .select("id, email, nome, cpf, acesso_liberado, perfil_suitability, user_id");
+        .select(
+          "id, email, nome, cpf, acesso_liberado, perfil_suitability, user_id"
+        );
       if (fallback.error) throw fallback.error;
       return NextResponse.json({ clientes: fallback.data ?? [] });
     }
@@ -69,36 +76,109 @@ export async function POST(request: Request) {
 
     const { data: existing } = await supabase
       .from("clientes")
-      .select("id")
+      .select("id, user_id")
       .eq("email", email)
       .maybeSingle();
 
     if (existing) {
+      const auth = await provisionarSenhaCliente(supabase, {
+        email,
+        nome,
+        userId: existing.user_id,
+      });
+
       const { data, error } = await supabase
         .from("clientes")
-        .update({ nome, cpf, acesso_liberado })
+        .update({
+          nome,
+          cpf,
+          acesso_liberado: true,
+          user_id: auth.userId,
+          senha_acesso: auth.senhaTemporaria,
+        })
         .eq("id", existing.id)
         .select("*")
         .single();
 
-      if (error) throw error;
+      if (error) {
+        await salvarSenhaAcesso(supabase, existing.id, auth.senhaTemporaria);
+        const { data: fallback, error: fallbackError } = await supabase
+          .from("clientes")
+          .update({
+            nome,
+            cpf,
+            acesso_liberado: true,
+            user_id: auth.userId,
+          })
+          .eq("id", existing.id)
+          .select("*")
+          .single();
+        if (fallbackError) throw fallbackError;
+
+        return NextResponse.json({
+          cliente: { ...fallback, senha_acesso: auth.senhaTemporaria },
+          senhaTemporaria: auth.senhaTemporaria,
+          message:
+            "Cliente já existia — dados atualizados e nova senha de acesso gerada.",
+        });
+      }
+
       return NextResponse.json({
         cliente: data,
-        message: "Cliente já existia — dados atualizados.",
+        senhaTemporaria: auth.senhaTemporaria,
+        message:
+          "Cliente já existia — dados atualizados e nova senha de acesso gerada.",
       });
     }
 
+    const auth = await provisionarSenhaCliente(supabase, { email, nome });
+
     const { data, error } = await supabase
       .from("clientes")
-      .insert({ email, nome, cpf, acesso_liberado })
+      .insert({
+        email,
+        nome,
+        cpf,
+        acesso_liberado,
+        user_id: auth.userId,
+        senha_acesso: auth.senhaTemporaria,
+      })
       .select("*")
       .single();
 
-    if (error) throw error;
+    if (error) {
+      const { data: fallback, error: fallbackError } = await supabase
+        .from("clientes")
+        .insert({
+          email,
+          nome,
+          cpf,
+          acesso_liberado,
+          user_id: auth.userId,
+        })
+        .select("*")
+        .single();
+
+      if (fallbackError) {
+        await supabase.auth.admin.deleteUser(auth.userId);
+        throw fallbackError;
+      }
+
+      await salvarSenhaAcesso(supabase, fallback.id, auth.senhaTemporaria);
+
+      return NextResponse.json({
+        cliente: { ...fallback, senha_acesso: auth.senhaTemporaria },
+        senhaTemporaria: auth.senhaTemporaria,
+        message:
+          "Cliente cadastrado. Envie a senha temporária ao cliente — no primeiro login ele deverá trocá-la.",
+      });
+    }
 
     return NextResponse.json({
       cliente: data,
-      message: "Cliente cadastrado com sucesso.",
+      senhaTemporaria: auth.senhaTemporaria,
+      message:
+        "Cliente cadastrado. Envie a senha temporária ao cliente — no primeiro login ele deverá trocá-la.",
     });
   } catch (err) {
     const { status, message } = errPayload(err);

@@ -15,6 +15,7 @@ import {
   summarizeAportes,
 } from "@/lib/cliente";
 import { LogoutButton } from "@/components/app/logout-button";
+import { mustChangePassword } from "@/lib/auth-guards";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -32,6 +33,11 @@ export default function DashboardPage() {
         const sessionUser = await getSessionUser(supabase);
         if (!sessionUser) {
           router.replace("/login");
+          return;
+        }
+
+        if (mustChangePassword(sessionUser)) {
+          router.replace("/alterar-senha");
           return;
         }
 

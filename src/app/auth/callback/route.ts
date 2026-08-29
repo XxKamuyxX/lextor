@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { linkClienteSession } from "@/lib/acesso";
+import { mustChangePassword } from "@/lib/auth-guards";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
@@ -23,10 +24,12 @@ export async function GET(request: Request) {
         return NextResponse.redirect(`${origin}/login?error=nao_autorizado`);
       }
 
-      const destino =
-        next === "/dashboard" && !cliente.perfil_suitability
-          ? "/onboarding"
-          : next;
+      let destino = next;
+      if (mustChangePassword(user)) {
+        destino = "/alterar-senha";
+      } else if (next === "/dashboard" && !cliente.perfil_suitability) {
+        destino = "/onboarding";
+      }
 
       return NextResponse.redirect(`${origin}${destino}`);
     }

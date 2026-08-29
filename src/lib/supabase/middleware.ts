@@ -1,8 +1,15 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { isAcessoLiberado, fetchClienteByEmail } from "@/lib/acesso";
+import { mustChangePassword } from "@/lib/auth-guards";
 
-const AUTH_PATHS = ["/dashboard", "/onboarding", "/preferencias", "/app"];
+const AUTH_PATHS = [
+  "/dashboard",
+  "/onboarding",
+  "/preferencias",
+  "/app",
+  "/alterar-senha",
+];
 
 function isProtectedPath(pathname: string) {
   return AUTH_PATHS.some(
@@ -18,7 +25,7 @@ async function usuarioTemAcesso(
 
   const byUser = await supabase
     .from("clientes")
-    .select("id, acesso_liberado")
+    .select("id, acesso_liberado, perfil_suitability")
     .eq("user_id", user.id)
     .maybeSingle();
 
@@ -26,6 +33,23 @@ async function usuarioTemAcesso(
 
   const cliente = await fetchClienteByEmail(supabase, user.email);
   return isAcessoLiberado(cliente);
+}
+
+async function getClienteResumo(
+  supabase: ReturnType<typeof createServerClient>,
+  user: { id: string; email?: string | null }
+) {
+  if (!user.email) return null;
+
+  const byUser = await supabase
+    .from("clientes")
+    .select("perfil_suitability")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (byUser.data) return byUser.data;
+
+  return fetchClienteByEmail(supabase, user.email);
 }
 
 export async function updateSession(request: NextRequest) {
@@ -58,9 +82,9 @@ export async function updateSession(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
   const isLoginRoute = pathname === "/login";
+  const isAlterarSenhaRoute = pathname === "/alterar-senha";
   const authCode = request.nextUrl.searchParams.get("code");
 
-  // Erros do Magic Link na home (?error=access_denied&error_code=otp_expired)
   const authError = request.nextUrl.searchParams.get("error");
   const errorCode = request.nextUrl.searchParams.get("error_code");
   if (authError && pathname === "/" && !authCode) {
@@ -71,8 +95,6 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Magic Link às vezes cai na Site URL (/) com ?code= — redireciona pro callback
-  const authCode = request.nextUrl.searchParams.get("code");
   if (authCode && pathname !== "/auth/callback") {
     const url = request.nextUrl.clone();
     url.pathname = "/auth/callback";
@@ -100,13 +122,38 @@ export async function updateSession(request: NextRequest) {
       url.searchParams.set("error", "nao_autorizado");
       return NextResponse.redirect(url);
     }
-  }
 
-  if (isLoginRoute && user) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
-    url.search = "";
-    return NextResponse.redirect(url);
+    const precisaTrocarSenha = mustChangePassword(user);
+
+    if (
+      precisaTrocarSenha &&
+      isProtectedPath(pathname) &&
+      !isAlterarSenhaRoute
+    ) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/alterar-senha";
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
+
+    if (isAlterarSenhaRoute && !precisaTrocarSenha) {
+      const cliente = await getClienteResumo(supabase, user);
+      const url = request.nextUrl.clone();
+      url.pathname = cliente?.perfil_suitability ? "/dashboard" : "/onboarding";
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
+
+    if (isLoginRoute) {
+      const url = request.nextUrl.clone();
+      if (precisaTrocarSenha) {
+        url.pathname = "/alterar-senha";
+      } else {
+        url.pathname = "/dashboard";
+      }
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
   }
 
   if (pathname === "/app" && user) {

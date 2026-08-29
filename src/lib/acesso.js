@@ -22,7 +22,7 @@ export async function fetchClienteByEmail(supabase, email) {
   const { data, error } = await supabase
     .from("clientes")
     .select("*")
-    .eq("email", normalized)
+    .ilike("email", normalized)
     .maybeSingle();
 
   if (error) throw error;
@@ -38,7 +38,7 @@ export async function verificarAcessoPorEmail(supabase, email) {
     { p_email: normalized }
   );
 
-  if (!rpcError) return viaRpc === true;
+  if (!rpcError && viaRpc === true) return true;
 
   const cliente = await fetchClienteByEmail(supabase, normalized);
   return isAcessoLiberado(cliente);

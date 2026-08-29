@@ -58,8 +58,18 @@ export async function DELETE(_request: Request, { params }: Params) {
     const { id } = await params;
     const supabase = createAdminClient();
 
+    const { data: cliente } = await supabase
+      .from("clientes")
+      .select("user_id")
+      .eq("id", id)
+      .maybeSingle();
+
     const { error } = await supabase.from("clientes").delete().eq("id", id);
     if (error) throw error;
+
+    if (cliente?.user_id) {
+      await supabase.auth.admin.deleteUser(cliente.user_id);
+    }
 
     return NextResponse.json({ ok: true });
   } catch (err) {

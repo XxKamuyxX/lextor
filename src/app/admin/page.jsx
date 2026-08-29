@@ -14,6 +14,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
   const [error, setError] = useState(null);
+  const [senhaGerada, setSenhaGerada] = useState(null);
 
   const loadClientes = useCallback(async () => {
     const res = await fetch("/api/admin/clientes");
@@ -78,6 +79,7 @@ export default function AdminPage() {
     setLoading(true);
     setError(null);
     setMessage(null);
+    setSenhaGerada(null);
 
     try {
       const res = await fetch("/api/admin/clientes", {
@@ -94,6 +96,12 @@ export default function AdminPage() {
       if (!res.ok) throw new Error(data.message || "Erro ao cadastrar.");
 
       setMessage(data.message);
+      if (data.senhaTemporaria) {
+        setSenhaGerada({
+          email,
+          senha: data.senhaTemporaria,
+        });
+      }
       setEmail("poucavistavidelonge@gmail.com");
       setNome("");
       setCpf("52998224725");
@@ -102,6 +110,40 @@ export default function AdminPage() {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function resetSenha(cliente) {
+    setError(null);
+    setMessage(null);
+    setSenhaGerada(null);
+
+    try {
+      const res = await fetch(
+        `/api/admin/clientes/${cliente.id}/reset-password`,
+        { method: "POST" }
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Erro ao gerar senha.");
+
+      setMessage(data.message);
+      setSenhaGerada({
+        email: cliente.email,
+        senha: data.senhaTemporaria,
+      });
+      await loadClientes();
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  async function copiarSenha(senha) {
+    if (!senha) return;
+    try {
+      await navigator.clipboard.writeText(senha);
+      setMessage("Senha copiada para a área de transferência.");
+    } catch {
+      setError("Não foi possível copiar a senha automaticamente.");
     }
   }
 
@@ -251,8 +293,9 @@ export default function AdminPage() {
             Cadastrar / liberar cliente
           </h2>
           <p className="mt-1 text-sm text-slate-400">
-            O e-mail cadastrado aqui poderá solicitar Magic Link na área de
-            membros.
+            Cadastre o cliente e envie a senha temporária gerada. A senha atual
+            fica visível na tabela abaixo. Se o cliente já trocou a senha no
+            painel, use &quot;Nova senha&quot; para gerar outra.
           </p>
 
           <form
@@ -321,6 +364,28 @@ export default function AdminPage() {
           </form>
         </section>
 
+        {senhaGerada && (
+          <div className="rounded-2xl border border-amber-800/50 bg-amber-950/30 p-6">
+            <p className="text-sm font-medium text-amber-200">
+              Senha temporária para {senhaGerada.email}
+            </p>
+            <p className="mt-3 rounded-lg border border-amber-900/60 bg-slate-950/60 px-4 py-3 font-mono text-lg tracking-wide text-white">
+              {senhaGerada.senha}
+            </p>
+            <p className="mt-3 text-xs text-amber-200/80">
+              Envie esta senha ao cliente por um canal seguro. Ela só aparece
+              uma vez aqui — use &quot;Nova senha&quot; se precisar gerar outra.
+            </p>
+            <button
+              type="button"
+              onClick={() => copiarSenha(senhaGerada.senha)}
+              className="mt-4 rounded-lg border border-amber-700/60 px-4 py-2 text-sm font-medium text-amber-100 transition hover:bg-amber-950/50"
+            >
+              Copiar senha
+            </button>
+          </div>
+        )}
+
         {message && (
           <p className="rounded-lg border border-emerald-800/50 bg-emerald-950/40 px-4 py-3 text-sm text-emerald-300">
             {message}
@@ -345,6 +410,7 @@ export default function AdminPage() {
                   <th className="px-6 py-3 font-medium">Nome</th>
                   <th className="px-6 py-3 font-medium">E-mail</th>
                   <th className="px-6 py-3 font-medium">CPF</th>
+                  <th className="px-6 py-3 font-medium">Senha</th>
                   <th className="px-6 py-3 font-medium">Acesso</th>
                   <th className="px-6 py-3 font-medium">Suitability</th>
                   <th className="px-6 py-3 font-medium">Ações</th>
@@ -354,7 +420,7 @@ export default function AdminPage() {
                 {clientes.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={6}
+                      colSpan={7}
                       className="px-6 py-10 text-center text-slate-500"
                     >
                       Nenhum cliente cadastrado ainda.
@@ -371,6 +437,26 @@ export default function AdminPage() {
                       </td>
                       <td className="px-6 py-4 text-slate-400">
                         {cliente.cpf || "—"}
+                      </td>
+                      <td className="px-6 py-4">
+                        {cliente.senha_acesso ? (
+                          <div className="flex items-center gap-2">
+                            <code className="rounded bg-slate-950/80 px-2 py-1 text-xs text-amber-200">
+                              {cliente.senha_acesso}
+                            </code>
+                            <button
+                              type="button"
+                              onClick={() => copiarSenha(cliente.senha_acesso)}
+                              className="rounded border border-slate-700 px-2 py-1 text-xs text-slate-400 transition hover:text-sky-300"
+                            >
+                              Copiar
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-slate-500">
+                            Use &quot;Nova senha&quot;
+                          </span>
+                        )}
                       </td>
                       <td className="px-6 py-4">
                         <span
@@ -394,6 +480,13 @@ export default function AdminPage() {
                             className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-300 transition hover:border-sky-600 hover:text-sky-300"
                           >
                             {cliente.acesso_liberado ? "Bloquear" : "Liberar"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => resetSenha(cliente)}
+                            className="rounded-lg border border-amber-900/50 px-3 py-1.5 text-xs text-amber-200 transition hover:bg-amber-950/40"
+                          >
+                            Nova senha
                           </button>
                           <button
                             type="button"

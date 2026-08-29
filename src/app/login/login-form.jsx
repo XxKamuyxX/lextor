@@ -2,68 +2,58 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { MENSAGEM_ACESSO_NEGADO, normalizeEmail } from "@/lib/acesso";
+import { mustChangePassword } from "@/lib/auth-guards";
+import { fetchCliente } from "@/lib/cliente";
 
 function mapSignInError(signInError) {
   const msg = signInError?.message?.toLowerCase() ?? "";
-  const status = signInError?.status;
 
-  if (
-    status === 429 ||
-    msg.includes("rate") ||
-    msg.includes("too many") ||
-    signInError?.code === "over_email_send_rate_limit"
-  ) {
-    return "Limite de envios atingido. Aguarde cerca de 1 hora antes de pedir outro link.";
+  if (msg.includes("invalid login credentials") || msg.includes("invalid credentials")) {
+    return "E-mail ou senha incorretos. Confira os dados enviados pela consultoria.";
   }
 
   if (msg.includes("invalid") && msg.includes("email")) {
     return "E-mail inválido. Confira se não há espaços ou caracteres extras.";
   }
 
-  if (msg.includes("redirect") || msg.includes("url")) {
-    return "URL de retorno não autorizada no Supabase. Adicione https://alexjdantas.com/auth/callback em Redirect URLs.";
-  }
-
-  return "Não foi possível enviar o link. Verifique o e-mail e tente novamente.";
+  return "Não foi possível entrar. Verifique e-mail e senha e tente novamente.";
 }
 
 export default function LoginForm() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState(null);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     const err = searchParams.get("error");
     if (err === "nao_autorizado") {
       setError(MENSAGEM_ACESSO_NEGADO);
-    } else if (err === "otp_expired") {
-      setError(
-        "Este link expirou ou já foi usado. Peça um novo link e clique somente no e-mail mais recente."
-      );
-    } else if (err === "access_denied") {
-      setError(
-        "Acesso negado pelo link de e-mail. Solicite um novo Magic Link em /login."
-      );
     } else if (err === "auth_callback_failed") {
-      setError("Falha na autenticação. Solicite um novo link de acesso.");
+      setError("Falha na autenticação. Tente entrar com e-mail e senha.");
     }
   }, [searchParams]);
 
   async function handleSubmit(e) {
     e.preventDefault();
     setLoading(true);
-    setMessage(null);
     setError(null);
 
     const emailNormalizado = normalizeEmail(email);
 
     if (!emailNormalizado || !emailNormalizado.includes("@")) {
       setError("Informe um e-mail válido, sem espaços.");
+      setLoading(false);
+      return;
+    }
+
+    if (!password) {
+      setError("Informe a senha enviada pela consultoria.");
       setLoading(false);
       return;
     }
@@ -83,26 +73,35 @@ export default function LoginForm() {
         return;
       }
 
-      const siteUrl =
-        process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin;
-
-      const redirectTo = `${siteUrl.replace(/\/$/, "")}/auth/callback?next=/dashboard`;
-
-      const { error: signInError } = await supabase.auth.signInWithOtp({
-        email: emailNormalizado,
-        options: {
-          emailRedirectTo: redirectTo,
-        },
-      });
+      const { data: signInData, error: signInError } =
+        await supabase.auth.signInWithPassword({
+          email: emailNormalizado,
+          password,
+        });
 
       if (signInError) {
         setError(mapSignInError(signInError));
         return;
       }
 
-      setMessage(
-        "Enviamos um link de acesso para o seu e-mail. Verifique sua caixa de entrada e a pasta de spam."
-      );
+      const user = signInData.user;
+      const redirect = searchParams.get("redirect");
+
+      if (mustChangePassword(user)) {
+        router.replace("/alterar-senha");
+        router.refresh();
+        return;
+      }
+
+      const cliente = await fetchCliente(supabase, user);
+      if (!cliente?.perfil_suitability) {
+        router.replace("/onboarding");
+      } else if (redirect && redirect.startsWith("/")) {
+        router.replace(redirect);
+      } else {
+        router.replace("/dashboard");
+      }
+      router.refresh();
     } catch {
       setError("Erro ao verificar acesso. Tente novamente em instantes.");
     } finally {
@@ -134,8 +133,8 @@ export default function LoginForm() {
           </p>
           <h1 className="mt-6 text-2xl font-bold text-white">Área do membro</h1>
           <p className="mt-2 text-sm leading-relaxed text-slate-400">
-            Acesso exclusivo para clientes com plano ativo. Informe o e-mail
-            cadastrado pela consultoria para receber o link de acesso.
+            Acesso exclusivo para clientes com plano ativo. Use o e-mail e a
+            senha enviados pela consultoria.
           </p>
         </div>
 
@@ -155,7 +154,26 @@ export default function LoginForm() {
               required
               value={email}
               onChange={(e) => setEmail(normalizeEmail(e.target.value))}
-              placeholder="poucavistavidelonge@gmail.com"
+              placeholder="cliente@email.com"
+              className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950/60 px-4 py-3 text-sm text-white placeholder:text-slate-500 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/25"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-slate-300"
+            >
+              Senha
+            </label>
+            <input
+              id="password"
+              type="password"
+              autoComplete="current-password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Senha enviada pela consultoria"
               className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950/60 px-4 py-3 text-sm text-white placeholder:text-slate-500 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/25"
             />
           </div>
@@ -165,18 +183,9 @@ export default function LoginForm() {
             disabled={loading}
             className="w-full rounded-lg bg-sky-600 py-3 text-sm font-semibold text-white transition hover:bg-sky-500 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {loading ? "Verificando..." : "Acessar com Magic Link"}
+            {loading ? "Entrando..." : "Entrar"}
           </button>
         </form>
-
-        {message && (
-          <p
-            role="status"
-            className="mt-5 rounded-lg border border-emerald-800/50 bg-emerald-950/50 px-4 py-3 text-sm text-emerald-300"
-          >
-            {message}
-          </p>
-        )}
 
         {error && (
           <p
