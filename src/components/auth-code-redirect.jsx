@@ -8,6 +8,14 @@ function AuthCodeRedirectInner() {
   const router = useRouter();
 
   useEffect(() => {
+    const authError = searchParams.get("error");
+    const errorCode = searchParams.get("error_code");
+
+    if (authError) {
+      router.replace(`/login?error=${encodeURIComponent(errorCode || authError)}`);
+      return;
+    }
+
     const code = searchParams.get("code");
     if (!code) return;
 
@@ -15,6 +23,13 @@ function AuthCodeRedirectInner() {
     const params = new URLSearchParams({ code, next });
     router.replace(`/auth/callback?${params.toString()}`);
   }, [searchParams, router]);
+
+  const hasAuthParams =
+    searchParams.get("code") ||
+    searchParams.get("error") ||
+    searchParams.get("error_code");
+
+  if (!hasAuthParams) return null;
 
   return (
     <div className="flex min-h-[40vh] items-center justify-center text-sm text-slate-500">

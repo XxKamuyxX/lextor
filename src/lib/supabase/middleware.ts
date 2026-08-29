@@ -59,6 +59,17 @@ export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isLoginRoute = pathname === "/login";
 
+  // Erros do Magic Link na home (?error=access_denied&error_code=otp_expired)
+  const authError = request.nextUrl.searchParams.get("error");
+  const errorCode = request.nextUrl.searchParams.get("error_code");
+  if (authError && pathname === "/" && !authCode) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    url.search = "";
+    url.searchParams.set("error", errorCode || authError);
+    return NextResponse.redirect(url);
+  }
+
   // Magic Link às vezes cai na Site URL (/) com ?code= — redireciona pro callback
   const authCode = request.nextUrl.searchParams.get("code");
   if (authCode && pathname !== "/auth/callback") {

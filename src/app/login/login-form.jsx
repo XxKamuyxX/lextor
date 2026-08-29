@@ -41,6 +41,14 @@ export default function LoginForm() {
     const err = searchParams.get("error");
     if (err === "nao_autorizado") {
       setError(MENSAGEM_ACESSO_NEGADO);
+    } else if (err === "otp_expired") {
+      setError(
+        "Este link expirou ou já foi usado. Peça um novo link e clique somente no e-mail mais recente."
+      );
+    } else if (err === "access_denied") {
+      setError(
+        "Acesso negado pelo link de e-mail. Solicite um novo Magic Link em /login."
+      );
     } else if (err === "auth_callback_failed") {
       setError("Falha na autenticação. Solicite um novo link de acesso.");
     }
