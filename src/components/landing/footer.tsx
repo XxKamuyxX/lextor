@@ -7,14 +7,14 @@ export function LandingFooter() {
         <div>
           <p className="font-semibold text-foreground">Alex J. Dantas</p>
           <p className="mt-1 text-sm text-muted">
-            Consultoria Financeira · alexjdantas.com.br
+            Consultoria Financeira · alexjdantas.com
           </p>
         </div>
         <div className="flex gap-6 text-sm text-muted">
           <Link href="/login" className="hover:text-primary transition">
             Área do membro
           </Link>
-          <a href="mailto:contato@alexjdantas.com.br" className="hover:text-primary transition">
+          <a href="mailto:contato@alexjdantas.com" className="hover:text-primary transition">
             Contato
           </a>
         </div>

@@ -28,8 +28,8 @@ src/
 
 1. Copie `.env.example` para `.env.local` e preencha as credenciais do Supabase.
 2. No painel do Supabase, em **Authentication → URL Configuration**, adicione:
-   - Site URL: `https://alexjdantas.com.br`
-   - Redirect URLs: `http://localhost:3000/auth/callback` e `https://alexjdantas.com.br/auth/callback`
+   - Site URL: `https://alexjdantas.com`
+   - Redirect URLs: `http://localhost:3000/auth/callback` e `https://alexjdantas.com/auth/callback`
 3. Ative **Email** como provider em **Authentication → Providers**.
 
 ## Desenvolvimento

@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   },
   description:
     "Consultoria financeira estratégica para investidores e empresas. Planejamento patrimonial, gestão de riscos e educação financeira.",
-  metadataBase: new URL("https://alexjdantas.com.br"),
+  metadataBase: new URL("https://alexjdantas.com"),
 };
 
 export default function RootLayout({
