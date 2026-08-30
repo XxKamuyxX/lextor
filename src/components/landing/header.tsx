@@ -1,26 +1,45 @@
 import Link from "next/link";
+import { Logo } from "@/components/landing/logo";
+
+const nav = [
+  { href: "#servicos", label: "Serviços" },
+  { href: "#metodologia", label: "Metodologia" },
+  { href: "#sobre", label: "Sobre" },
+  { href: "#contato", label: "Contato" },
+];
 
 export function LandingHeader() {
   return (
-    <header className="sticky top-0 z-50 border-b border-border bg-white/80 backdrop-blur-md">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-        <Link href="/" className="text-lg font-bold text-primary">
-          Alex J. Dantas
-        </Link>
-        <nav className="hidden items-center gap-8 text-sm font-medium text-foreground md:flex">
-          <a href="#servicos" className="hover:text-primary transition">
-            Serviços
-          </a>
-          <a href="#sobre" className="hover:text-primary transition">
-            Sobre
-          </a>
+    <header className="sticky top-0 z-50 border-b border-white/5 bg-black/80 backdrop-blur-xl">
+      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6 lg:px-8">
+        <Logo size="sm" />
+
+        <nav className="hidden items-center gap-10 md:flex">
+          {nav.map((item) => (
+            <a
+              key={item.href}
+              href={item.href}
+              className="text-sm font-medium tracking-wide text-slate-400 transition hover:text-blue-400"
+            >
+              {item.label}
+            </a>
+          ))}
+        </nav>
+
+        <div className="flex items-center gap-3">
           <Link
             href="/login"
-            className="rounded-lg bg-primary px-4 py-2 text-primary-foreground transition hover:bg-sky-900"
+            className="hidden rounded-full border border-blue-500/30 px-5 py-2.5 text-sm font-medium text-blue-300 transition hover:border-blue-400/50 hover:bg-blue-500/10 sm:inline-flex"
           >
-            Área do membro
+            Área do cliente
           </Link>
-        </nav>
+          <Link
+            href="/login"
+            className="rounded-full bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-900/40 transition hover:bg-blue-500"
+          >
+            Entrar
+          </Link>
+        </div>
       </div>
     </header>
   );

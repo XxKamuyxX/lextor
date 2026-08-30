@@ -14,12 +14,20 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Alex J. Dantas | Consultoria Financeira",
-    template: "%s | Alex J. Dantas",
+    default: "ETR | Consultoria de Investimentos de Alto Padrão",
+    template: "%s | ETR",
   },
   description:
-    "Consultoria financeira estratégica para investidores e empresas. Planejamento patrimonial, gestão de riscos e educação financeira.",
+    "Consultoria patrimonial institucional: planejamento, alocação estratégica, suitability e acompanhamento de carteira para investidores exigentes.",
   metadataBase: new URL("https://alexjdantas.com"),
+  openGraph: {
+    title: "ETR | Consultoria de Investimentos",
+    description:
+      "Patrimônio com visão institucional. Estratégia, governança e performance no longo prazo.",
+    siteName: "ETR",
+    locale: "pt_BR",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
