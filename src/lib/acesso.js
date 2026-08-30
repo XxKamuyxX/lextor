@@ -30,6 +30,35 @@ export async function fetchClienteByEmail(supabase, email) {
   return data;
 }
 
+/**
+ * Resolve o cliente da sessão (user_id + e-mail), preferindo registro com perfil.
+ */
+export async function resolveClienteSession(supabase, user) {
+  if (!user) return null;
+
+  let byUser = null;
+  const userQuery = await supabase
+    .from("clientes")
+    .select("*")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (userQuery.data) byUser = userQuery.data;
+
+  let byEmail = null;
+  if (user.email) {
+    byEmail = await fetchClienteByEmail(supabase, user.email);
+  }
+
+  if (byUser && byEmail && byUser.id !== byEmail.id) {
+    const userTemPerfil = String(byUser.perfil_suitability ?? "").trim();
+    const emailTemPerfil = String(byEmail.perfil_suitability ?? "").trim();
+    if (!userTemPerfil && emailTemPerfil) return byEmail;
+    if (userTemPerfil && !emailTemPerfil) return byUser;
+  }
+
+  return byUser ?? byEmail;
+}
+
 export async function verificarAcessoPorEmail(supabase, email) {
   const normalized = normalizeEmail(email);
   if (!normalized) return false;
@@ -52,23 +81,7 @@ export async function verificarAcessoPorEmail(supabase, email) {
 export async function linkClienteSession(supabase, user) {
   if (!user) return null;
 
-  let cliente = null;
-
-  const byUser = await supabase
-    .from("clientes")
-    .select("*")
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  if (byUser.data) {
-    cliente = byUser.data;
-  } else if (user.email) {
-    cliente = await fetchClienteByEmail(supabase, user.email);
-  }
-
-  if (!cliente && user.email) {
-    cliente = await fetchClienteByEmail(supabase, normalizeEmail(user.email));
-  }
+  const cliente = await resolveClienteSession(supabase, user);
 
   if (!isAcessoLiberado(cliente)) return null;
 
@@ -79,7 +92,7 @@ export async function linkClienteSession(supabase, user) {
       .eq("id", cliente.id);
 
     if (linkError) throw linkError;
-    cliente = { ...cliente, user_id: user.id };
+    cliente.user_id = user.id;
   }
 
   return cliente;

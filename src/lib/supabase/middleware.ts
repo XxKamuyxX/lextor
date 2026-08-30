@@ -1,6 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { isAcessoLiberado, fetchClienteByEmail } from "@/lib/acesso";
+import { isAcessoLiberado, fetchClienteByEmail, resolveClienteSession } from "@/lib/acesso";
 import { hasPerfilSuitability, mustChangePassword } from "@/lib/auth-guards";
 
 const AUTH_PATHS = [
@@ -50,17 +50,7 @@ async function getClienteResumo(
   supabase: ReturnType<typeof createServerClient>,
   user: { id: string; email?: string | null }
 ) {
-  const byUser = await supabase
-    .from("clientes")
-    .select("id, perfil_suitability, acesso_liberado")
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  if (byUser.data) return byUser.data;
-
-  if (!user.email) return null;
-
-  return fetchClienteByEmail(supabase, user.email);
+  return resolveClienteSession(supabase, user);
 }
 
 function destinoPosLogin(

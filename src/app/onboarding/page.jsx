@@ -129,12 +129,13 @@ export default function OnboardingPage() {
         );
       }
 
-      router.replace("/dashboard");
+      window.location.assign("/dashboard");
     } catch (err) {
       setError(
         err?.message ||
           "Não foi possível salvar o perfil. Verifique as permissões no Supabase."
       );
+    } finally {
       setSaving(false);
     }
   }

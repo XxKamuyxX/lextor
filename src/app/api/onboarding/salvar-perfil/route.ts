@@ -3,6 +3,11 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { linkClienteSession } from "@/lib/acesso";
 import { resolveAuthUser } from "@/lib/resolve-auth-user";
 
+function colunaAusenteNoErro(message: string) {
+  const match = String(message || "").match(/Could not find the '([^']+)' column/);
+  return match?.[1] ?? null;
+}
+
 export async function POST(request: Request) {
   try {
     const user = await resolveAuthUser(request);
@@ -40,30 +45,63 @@ export async function POST(request: Request) {
     }
 
     const termosAceitosEm = new Date().toISOString();
-    const payload = {
+    let payload: Record<string, unknown> = {
       perfil_suitability: perfil,
       termos_aceitos_em: termosAceitosEm,
       suitability_respostas: answers,
+      user_id: user.id,
     };
 
-    let { error: updateError } = await admin
-      .from("clientes")
-      .update(payload)
-      .eq("id", cliente.id);
+    let updateError: { message?: string } | null = null;
+    let updated = false;
 
-    if (updateError) {
-      ({ error: updateError } = await admin
+    for (let i = 0; i < 5; i += 1) {
+      const { error } = await admin
         .from("clientes")
-        .update({
-          perfil_suitability: perfil,
-          termos_aceitos_em: termosAceitosEm,
-        })
-        .eq("id", cliente.id));
+        .update(payload)
+        .eq("id", cliente.id);
+
+      if (!error) {
+        updateError = null;
+        updated = true;
+        break;
+      }
+
+      updateError = error;
+      const coluna = colunaAusenteNoErro(error.message || "");
+      if (coluna && coluna in payload) {
+        delete payload[coluna];
+        continue;
+      }
+      break;
     }
 
-    if (updateError) throw updateError;
+    if (!updated && updateError) throw updateError;
 
-    return NextResponse.json({ ok: true });
+    const { data: confirmado, error: readError } = await admin
+      .from("clientes")
+      .select("id, perfil_suitability")
+      .eq("id", cliente.id)
+      .maybeSingle();
+
+    if (readError) throw readError;
+
+    const perfilSalvo = String(confirmado?.perfil_suitability ?? "").trim();
+    if (!perfilSalvo) {
+      return NextResponse.json(
+        {
+          ok: false,
+          message:
+            "Perfil não foi gravado. Execute o SQL de schema em clientes (coluna perfil_suitability) no Supabase.",
+        },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      ok: true,
+      perfil_suitability: perfilSalvo,
+    });
   } catch (err) {
     const message =
       err instanceof Error ? err.message : "Não foi possível salvar o perfil.";
