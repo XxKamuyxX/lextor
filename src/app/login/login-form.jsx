@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { MENSAGEM_ACESSO_NEGADO, normalizeEmail } from "@/lib/acesso";
 
@@ -21,7 +21,6 @@ function mapSignInError(signInError) {
 }
 
 export default function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -105,8 +104,7 @@ export default function LoginForm() {
           ? redirect
           : vinculoData.redirect || "/dashboard";
 
-      router.replace(destino);
-      router.refresh();
+      window.location.assign(destino);
     } catch {
       setError("Erro ao verificar acesso. Tente novamente em instantes.");
     } finally {

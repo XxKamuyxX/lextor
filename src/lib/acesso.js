@@ -12,7 +12,8 @@ export function normalizeEmail(email) {
 
 export function isAcessoLiberado(cliente) {
   if (!cliente) return false;
-  return cliente.acesso_liberado === true;
+  const valor = cliente.acesso_liberado;
+  return valor === true || valor === "true" || valor === "t" || valor === 1;
 }
 
 export async function fetchClienteByEmail(supabase, email) {

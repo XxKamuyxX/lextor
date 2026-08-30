@@ -21,7 +21,16 @@ async function usuarioTemAcesso(
   supabase: ReturnType<typeof createServerClient>,
   user: { id: string; email?: string | null }
 ) {
-  if (!user.email) return false;
+  const email = user.email?.trim();
+
+  // SECURITY DEFINER — não depende de RLS na tabela clientes
+  if (email) {
+    const { data: viaRpc, error: rpcError } = await supabase.rpc(
+      "verificar_acesso_membro",
+      { p_email: email }
+    );
+    if (!rpcError && viaRpc === true) return true;
+  }
 
   const byUser = await supabase
     .from("clientes")
@@ -31,7 +40,9 @@ async function usuarioTemAcesso(
 
   if (byUser.data) return isAcessoLiberado(byUser.data);
 
-  const cliente = await fetchClienteByEmail(supabase, user.email);
+  if (!email) return false;
+
+  const cliente = await fetchClienteByEmail(supabase, email);
   return isAcessoLiberado(cliente);
 }
 
@@ -111,7 +122,7 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (user && (isProtectedPath(pathname) || isLoginRoute)) {
+  if (user && isProtectedPath(pathname)) {
     const temAcesso = await usuarioTemAcesso(supabase, user);
 
     if (!temAcesso) {
@@ -144,16 +155,18 @@ export async function updateSession(request: NextRequest) {
       return NextResponse.redirect(url);
     }
 
-    if (isLoginRoute) {
-      const url = request.nextUrl.clone();
-      if (precisaTrocarSenha) {
-        url.pathname = "/alterar-senha";
-      } else {
-        url.pathname = "/dashboard";
-      }
-      url.search = "";
-      return NextResponse.redirect(url);
+  }
+
+  if (isLoginRoute && user) {
+    const temAcesso = await usuarioTemAcesso(supabase, user);
+    if (!temAcesso) {
+      return supabaseResponse;
     }
+
+    const url = request.nextUrl.clone();
+    url.pathname = mustChangePassword(user) ? "/alterar-senha" : "/dashboard";
+    url.search = "";
+    return NextResponse.redirect(url);
   }
 
   if (pathname === "/app" && user) {
