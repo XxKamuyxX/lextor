@@ -16,6 +16,24 @@ export function isAcessoLiberado(cliente) {
   return valor === true || valor === "true" || valor === "t" || valor === 1;
 }
 
+function temPerfilSalvo(cliente) {
+  return Boolean(String(cliente?.perfil_suitability ?? "").trim());
+}
+
+/** Escolhe o melhor registro quando há duplicatas (perfil > acesso liberado). */
+export function pickBestClienteRecord(rows) {
+  if (!rows?.length) return null;
+  if (rows.length === 1) return rows[0];
+
+  const comPerfil = rows.find((row) => temPerfilSalvo(row));
+  if (comPerfil) return comPerfil;
+
+  const comAcesso = rows.find((row) => isAcessoLiberado(row));
+  if (comAcesso) return comAcesso;
+
+  return rows[0];
+}
+
 export async function fetchClienteByEmail(supabase, email) {
   const normalized = normalizeEmail(email);
   if (!normalized) return null;
@@ -23,11 +41,10 @@ export async function fetchClienteByEmail(supabase, email) {
   const { data, error } = await supabase
     .from("clientes")
     .select("*")
-    .ilike("email", normalized)
-    .maybeSingle();
+    .ilike("email", normalized);
 
   if (error) throw error;
-  return data;
+  return pickBestClienteRecord(data);
 }
 
 /**
@@ -40,9 +57,10 @@ export async function resolveClienteSession(supabase, user) {
   const userQuery = await supabase
     .from("clientes")
     .select("*")
-    .eq("user_id", user.id)
-    .maybeSingle();
-  if (userQuery.data) byUser = userQuery.data;
+    .eq("user_id", user.id);
+  if (!userQuery.error) {
+    byUser = pickBestClienteRecord(userQuery.data);
+  }
 
   let byEmail = null;
   if (user.email) {
@@ -50,10 +68,12 @@ export async function resolveClienteSession(supabase, user) {
   }
 
   if (byUser && byEmail && byUser.id !== byEmail.id) {
-    const userTemPerfil = String(byUser.perfil_suitability ?? "").trim();
-    const emailTemPerfil = String(byEmail.perfil_suitability ?? "").trim();
+    const userTemPerfil = temPerfilSalvo(byUser);
+    const emailTemPerfil = temPerfilSalvo(byEmail);
     if (!userTemPerfil && emailTemPerfil) return byEmail;
     if (userTemPerfil && !emailTemPerfil) return byUser;
+    // Preferir cadastro por e-mail (criado no admin) quando ambíguo.
+    return byEmail;
   }
 
   return byUser ?? byEmail;

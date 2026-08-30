@@ -8,6 +8,10 @@ import { LandingCta } from "@/components/landing/cta";
 import { LandingFooter } from "@/components/landing/footer";
 import { AuthCodeRedirect } from "@/components/auth-code-redirect";
 
+// Evita HTML estático desatualizado após deploy (causava CSS 404 na Hostinger).
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default function HomePage() {
   return (
     <div className="flex min-h-screen flex-col bg-black text-slate-100">

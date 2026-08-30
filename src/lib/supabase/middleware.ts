@@ -46,6 +46,23 @@ async function usuarioTemAcesso(
   return isAcessoLiberado(cliente);
 }
 
+async function getPerfilSuitability(
+  supabase: ReturnType<typeof createServerClient>,
+  user: { id: string; email?: string | null }
+) {
+  const { data: viaRpc, error: rpcError } = await supabase.rpc(
+    "obter_perfil_suitability",
+    { p_user_id: user.id, p_email: user.email ?? "" }
+  );
+
+  if (!rpcError && hasPerfilSuitability(viaRpc)) {
+    return String(viaRpc).trim();
+  }
+
+  const cliente = await getClienteResumo(supabase, user);
+  return cliente?.perfil_suitability ?? null;
+}
+
 async function getClienteResumo(
   supabase: ReturnType<typeof createServerClient>,
   user: { id: string; email?: string | null }
@@ -146,15 +163,15 @@ export async function updateSession(request: NextRequest) {
     }
 
     if (isAlterarSenhaRoute && !precisaTrocarSenha) {
-      const cliente = await getClienteResumo(supabase, user);
+      const perfil = await getPerfilSuitability(supabase, user);
       const url = request.nextUrl.clone();
-      url.pathname = destinoPosLogin(user, cliente?.perfil_suitability);
+      url.pathname = destinoPosLogin(user, perfil);
       url.search = "";
       return NextResponse.redirect(url);
     }
 
-    const cliente = await getClienteResumo(supabase, user);
-    const temPerfil = hasPerfilSuitability(cliente?.perfil_suitability);
+    const perfil = await getPerfilSuitability(supabase, user);
+    const temPerfil = hasPerfilSuitability(perfil);
 
     if (pathname === "/onboarding" && temPerfil) {
       const url = request.nextUrl.clone();
@@ -190,9 +207,9 @@ export async function updateSession(request: NextRequest) {
       return supabaseResponse;
     }
 
-    const cliente = await getClienteResumo(supabase, user);
+    const perfilLogin = await getPerfilSuitability(supabase, user);
     const url = request.nextUrl.clone();
-    url.pathname = destinoPosLogin(user, cliente?.perfil_suitability);
+    url.pathname = destinoPosLogin(user, perfilLogin);
     url.search = "";
     return NextResponse.redirect(url);
   }

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { getSessionUser } from "@/lib/cliente";
-import { mustChangePassword } from "@/lib/auth-guards";
+import { mustChangePassword, hasPerfilSuitability } from "@/lib/auth-guards";
 import {
   SUITABILITY_QUESTIONS,
   calculatePerfil,
@@ -49,6 +49,11 @@ export default function OnboardingPage() {
           return;
         }
 
+        if (hasPerfilSuitability(sessaoData.perfil_suitability)) {
+          router.replace("/dashboard");
+          return;
+        }
+
         if (!cancelled) setUser(sessionUser);
       } catch (err) {
         if (!cancelled) {
@@ -75,12 +80,35 @@ export default function OnboardingPage() {
     );
   }, [step, questionIndex]);
 
+  function finishSuitability(finalAnswers) {
+    const calculated = calculatePerfil(finalAnswers);
+    setAnswers(finalAnswers);
+    setPerfil(calculated);
+    setStep("resultado");
+    setError(null);
+    void persistPerfil(calculated, finalAnswers);
+  }
+
   function selectAnswer(value) {
-    setAnswers((prev) => ({ ...prev, [currentQuestion.id]: value }));
+    if (!currentQuestion) return;
+
+    const nextAnswers = { ...answers, [currentQuestion.id]: value };
+    setAnswers(nextAnswers);
+    setError(null);
+
+    if (questionIndex < SUITABILITY_QUESTIONS.length - 1) {
+      setQuestionIndex((i) => i + 1);
+      return;
+    }
+
+    finishSuitability(nextAnswers);
   }
 
   function goNextQuestion() {
-    if (answers[currentQuestion.id] == null) {
+    if (!currentQuestion) return;
+
+    const answer = answers[currentQuestion.id];
+    if (answer == null) {
       setError("Selecione uma opção para continuar.");
       return;
     }
@@ -91,13 +119,11 @@ export default function OnboardingPage() {
       return;
     }
 
-    const calculated = calculatePerfil(answers);
-    setPerfil(calculated);
-    setStep("resultado");
+    finishSuitability({ ...answers, [currentQuestion.id]: answer });
   }
 
-  async function savePerfil() {
-    if (!user || !perfil) return;
+  async function persistPerfil(perfilValue, answersValue) {
+    if (!user || !perfilValue) return;
     setSaving(true);
     setError(null);
 
@@ -115,8 +141,8 @@ export default function OnboardingPage() {
           ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
         },
         body: JSON.stringify({
-          perfil_suitability: perfil,
-          answers,
+          perfil_suitability: perfilValue,
+          answers: answersValue,
         }),
       });
 
@@ -138,6 +164,11 @@ export default function OnboardingPage() {
     } finally {
       setSaving(false);
     }
+  }
+
+  async function savePerfil() {
+    if (!user || !perfil) return;
+    await persistPerfil(perfil, answers);
   }
 
   if (booting) {
@@ -310,11 +341,9 @@ export default function OnboardingPage() {
                 {perfil}
               </p>
               <p className="text-sm leading-relaxed text-slate-400">
-                Este resultado será salvo em{" "}
-                <span className="text-slate-300">perfil_suitability</span> e
-                orientará as recomendações da consultoria. Preferências
-                setoriais profundas podem ser ajustadas depois em Teses e
-                Objetivos.
+                {saving
+                  ? "Salvando seu perfil e liberando o acesso ao dashboard..."
+                  : "Seu perfil foi calculado. Clique abaixo se o redirecionamento não ocorrer automaticamente."}
               </p>
               <button
                 type="button"
@@ -322,7 +351,7 @@ export default function OnboardingPage() {
                 onClick={savePerfil}
                 className="w-full rounded-lg bg-sky-600 py-3 text-sm font-semibold text-white transition hover:bg-sky-500 disabled:opacity-60"
               >
-                {saving ? "Salvando..." : "Salvar e ir ao Dashboard"}
+                {saving ? "Salvando..." : "Ir ao Dashboard"}
               </button>
               <button
                 type="button"
