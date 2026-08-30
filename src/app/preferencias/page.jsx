@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { getSessionUser } from "@/lib/cliente";
 import { authHeaders, getAccessTokenFromBrowser } from "@/lib/auth-fetch";
-import { LogoutButton } from "@/components/app/logout-button";
+import { UserShell } from "@/components/app/user-shell";
 
 const CLASSES_ATIVOS = [
   { id: "fiis", label: "FIIs" },
@@ -54,6 +54,7 @@ export default function PreferenciasPage() {
   const [message, setMessage] = useState(null);
   const [error, setError] = useState(null);
   const [clienteId, setClienteId] = useState(null);
+  const [userEmail, setUserEmail] = useState(null);
   const [form, setForm] = useState(emptyForm);
 
   useEffect(() => {
@@ -83,6 +84,7 @@ export default function PreferenciasPage() {
         }
 
         if (!cancelled) {
+          setUserEmail(user.email ?? null);
           setClienteId(data.cliente.id);
           setForm({
             ...emptyForm,
@@ -166,32 +168,8 @@ export default function PreferenciasPage() {
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-slate-950 text-slate-100">
-      <div
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(14,116,144,0.14)_0%,_transparent_55%)]"
-        aria-hidden
-      />
-
-      <header className="relative z-10 border-b border-sky-950/80 bg-slate-950/80 backdrop-blur">
-        <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-6">
-            <Link href="/dashboard" className="text-lg font-bold text-sky-400">
-              Alex J. Dantas
-            </Link>
-            <nav className="hidden gap-4 text-sm text-slate-400 sm:flex">
-              <Link href="/dashboard" className="transition hover:text-sky-300">
-                Dashboard
-              </Link>
-              <Link href="/preferencias" className="text-sky-300">
-                Teses e Objetivos
-              </Link>
-            </nav>
-          </div>
-          <LogoutButton />
-        </div>
-      </header>
-
-      <main className="relative z-10 mx-auto max-w-3xl px-6 py-10">
+    <UserShell email={userEmail}>
+      <div className="mx-auto max-w-3xl">
         <div className="mb-8">
           <p className="text-xs font-medium uppercase tracking-widest text-sky-600">
             Nível 2 · Preferências profundas
@@ -416,7 +394,7 @@ export default function PreferenciasPage() {
             </Link>
           </div>
         </form>
-      </main>
-    </div>
+      </div>
+    </UserShell>
   );
 }

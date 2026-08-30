@@ -17,7 +17,7 @@ as $$
       from public.clientes c
       where c.user_id = p_user_id
         and trim(coalesce(c.perfil_suitability, '')) <> ''
-      order by c.created_at nulls last
+      order by c.id
       limit 1
     ),
     (
@@ -25,7 +25,7 @@ as $$
       from public.clientes c
       where lower(trim(c.email)) = lower(trim(coalesce(p_email, '')))
         and trim(coalesce(c.perfil_suitability, '')) <> ''
-      order by c.created_at nulls last
+      order by c.id
       limit 1
     )
   );

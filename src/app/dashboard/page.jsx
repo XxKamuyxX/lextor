@@ -14,10 +14,11 @@ import {
   tickerDoAporte,
 } from "@/lib/cliente";
 import { authHeaders, getAccessTokenFromBrowser } from "@/lib/auth-fetch";
-import { LogoutButton } from "@/components/app/logout-button";
+import { UserShell } from "@/components/app/user-shell";
 import { mustChangePassword } from "@/lib/auth-guards";
 import { SummaryCard } from "@/components/dashboard/summary-card";
 import { CarteiraCharts } from "@/components/dashboard/carteira-charts";
+import { BenchmarkComparison } from "@/components/dashboard/benchmark-comparison";
 import {
   staggerContainer,
   staggerItem,
@@ -31,6 +32,7 @@ export default function DashboardPage() {
   const [user, setUser] = useState(null);
   const [aportes, setAportes] = useState([]);
   const [precosAtuais, setPrecosAtuais] = useState({});
+  const [accessToken, setAccessToken] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -57,6 +59,7 @@ export default function DashboardPage() {
 
         const accessToken =
           session.access_token ?? (await getAccessTokenFromBrowser(supabase));
+        if (!cancelled) setAccessToken(accessToken);
         const res = await fetch("/api/cliente/me", {
           credentials: "same-origin",
           headers: authHeaders(accessToken),
@@ -150,35 +153,8 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-slate-950 text-slate-100">
-      <div
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(14,116,144,0.16)_0%,_transparent_55%)]"
-        aria-hidden
-      />
-
-      <header className="relative z-10 border-b border-sky-950/80 bg-slate-950/80 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-6">
-            <Link href="/dashboard" className="text-lg font-bold text-sky-400">
-              Alex J. Dantas
-            </Link>
-            <nav className="hidden gap-4 text-sm text-slate-400 sm:flex">
-              <Link href="/dashboard" className="text-sky-300">
-                Dashboard
-              </Link>
-              <Link
-                href="/preferencias"
-                className="transition hover:text-sky-300"
-              >
-                Teses e Objetivos
-              </Link>
-            </nav>
-          </div>
-          <LogoutButton />
-        </div>
-      </header>
-
-      <main className="relative z-10 mx-auto max-w-6xl space-y-8 px-6 py-10">
+    <UserShell email={user?.email}>
+      <div className="space-y-8">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -234,6 +210,14 @@ export default function DashboardPage() {
             format="brl"
             hint="Soma dos aportes da carteira"
           />
+        </motion.section>
+
+        <motion.section
+          variants={staggerContainer}
+          initial="hidden"
+          animate="show"
+        >
+          <BenchmarkComparison accessToken={accessToken} />
         </motion.section>
 
         <motion.section
@@ -340,7 +324,7 @@ export default function DashboardPage() {
             </div>
           </motion.div>
         </motion.section>
-      </main>
-    </div>
+      </div>
+    </UserShell>
   );
 }
