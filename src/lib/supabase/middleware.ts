@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { isAcessoLiberado, fetchClienteByEmail } from "@/lib/acesso";
-import { mustChangePassword } from "@/lib/auth-guards";
+import { hasPerfilSuitability, mustChangePassword } from "@/lib/auth-guards";
 
 const AUTH_PATHS = [
   "/dashboard",
@@ -50,17 +50,25 @@ async function getClienteResumo(
   supabase: ReturnType<typeof createServerClient>,
   user: { id: string; email?: string | null }
 ) {
-  if (!user.email) return null;
-
   const byUser = await supabase
     .from("clientes")
-    .select("perfil_suitability")
+    .select("id, perfil_suitability, acesso_liberado")
     .eq("user_id", user.id)
     .maybeSingle();
 
   if (byUser.data) return byUser.data;
 
+  if (!user.email) return null;
+
   return fetchClienteByEmail(supabase, user.email);
+}
+
+function destinoPosLogin(
+  user: { user_metadata?: Record<string, unknown> },
+  perfil: unknown
+) {
+  if (mustChangePassword(user)) return "/alterar-senha";
+  return hasPerfilSuitability(perfil) ? "/dashboard" : "/onboarding";
 }
 
 export async function updateSession(request: NextRequest) {
@@ -150,11 +158,40 @@ export async function updateSession(request: NextRequest) {
     if (isAlterarSenhaRoute && !precisaTrocarSenha) {
       const cliente = await getClienteResumo(supabase, user);
       const url = request.nextUrl.clone();
-      url.pathname = cliente?.perfil_suitability ? "/dashboard" : "/onboarding";
+      url.pathname = destinoPosLogin(user, cliente?.perfil_suitability);
       url.search = "";
       return NextResponse.redirect(url);
     }
 
+    const cliente = await getClienteResumo(supabase, user);
+    const temPerfil = hasPerfilSuitability(cliente?.perfil_suitability);
+
+    if (pathname === "/onboarding" && temPerfil) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/dashboard";
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
+
+    if (
+      (pathname === "/dashboard" || pathname.startsWith("/dashboard/")) &&
+      !temPerfil
+    ) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/onboarding";
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
+
+    if (
+      (pathname === "/preferencias" || pathname.startsWith("/preferencias/")) &&
+      !temPerfil
+    ) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/onboarding";
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
   }
 
   if (isLoginRoute && user) {
@@ -163,8 +200,9 @@ export async function updateSession(request: NextRequest) {
       return supabaseResponse;
     }
 
+    const cliente = await getClienteResumo(supabase, user);
     const url = request.nextUrl.clone();
-    url.pathname = mustChangePassword(user) ? "/alterar-senha" : "/dashboard";
+    url.pathname = destinoPosLogin(user, cliente?.perfil_suitability);
     url.search = "";
     return NextResponse.redirect(url);
   }

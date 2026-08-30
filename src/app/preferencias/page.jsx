@@ -4,11 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import {
-  ensureCliente,
-  fetchCliente,
-  getSessionUser,
-} from "@/lib/cliente";
+import { getSessionUser } from "@/lib/cliente";
+import { authHeaders, getAccessTokenFromBrowser } from "@/lib/auth-fetch";
 import { LogoutButton } from "@/components/app/logout-button";
 
 const CLASSES_ATIVOS = [
@@ -70,17 +67,26 @@ export default function PreferenciasPage() {
           return;
         }
 
-        const cliente = await fetchCliente(supabase, user);
-        if (!cliente?.perfil_suitability) {
-          router.replace("/onboarding");
-          return;
+        const accessToken = await getAccessTokenFromBrowser(supabase);
+        const res = await fetch("/api/cliente/me", {
+          credentials: "same-origin",
+          headers: authHeaders(accessToken),
+        });
+        const data = await res.json();
+
+        if (!res.ok || !data.ok) {
+          if (res.status === 401) {
+            router.replace("/login");
+            return;
+          }
+          throw new Error(data.message || "Não foi possível carregar as preferências.");
         }
 
         if (!cancelled) {
-          setClienteId(cliente.id);
+          setClienteId(data.cliente.id);
           setForm({
             ...emptyForm,
-            ...(cliente.preferencias_investimento || {}),
+            ...(data.cliente.preferencias_investimento || {}),
           });
         }
       } catch (err) {

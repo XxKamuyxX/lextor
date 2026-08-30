@@ -4,10 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import {
-  ensureCliente,
-  getSessionUser,
-} from "@/lib/cliente";
+import { getSessionUser } from "@/lib/cliente";
 import { mustChangePassword } from "@/lib/auth-guards";
 import {
   SUITABILITY_QUESTIONS,
@@ -49,10 +46,6 @@ export default function OnboardingPage() {
         const sessaoData = await sessao.json();
         if (!sessao.ok || !sessaoData.ok) {
           router.replace("/login?error=nao_autorizado");
-          return;
-        }
-        if (sessaoData.perfil_suitability) {
-          router.replace("/dashboard");
           return;
         }
 
@@ -109,32 +102,34 @@ export default function OnboardingPage() {
     setError(null);
 
     try {
-      const cliente = await ensureCliente(supabase, user, {
-        termos_aceitos_em: new Date().toISOString(),
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
+
+      const res = await fetch("/api/onboarding/salvar-perfil", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+          "Content-Type": "application/json",
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
+        body: JSON.stringify({
+          perfil_suitability: perfil,
+          answers,
+        }),
       });
 
-      const payload = {
-        perfil_suitability: perfil,
-        termos_aceitos_em: new Date().toISOString(),
-      };
+      const data = await res.json();
 
-      let { error: updateError } = await supabase
-        .from("clientes")
-        .update({ ...payload, suitability_respostas: answers })
-        .eq("id", cliente.id);
-
-      // Fallback se a coluna suitability_respostas ainda não existir
-      if (updateError) {
-        ({ error: updateError } = await supabase
-          .from("clientes")
-          .update(payload)
-          .eq("id", cliente.id));
+      if (!res.ok || !data.ok) {
+        throw new Error(
+          data.message ||
+            "Não foi possível salvar o perfil. Verifique as permissões no Supabase."
+        );
       }
 
-      if (updateError) throw updateError;
-
       router.replace("/dashboard");
-      router.refresh();
     } catch (err) {
       setError(
         err?.message ||

@@ -278,7 +278,7 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
       <header className="border-b border-sky-950/80 bg-slate-950/90">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <div>
             <p className="text-xs uppercase tracking-widest text-sky-600">
               Admin
@@ -303,7 +303,7 @@ export default function AdminPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl space-y-8 px-6 py-10">
+      <main className="mx-auto max-w-6xl space-y-8 px-6 py-10">
         <section className="rounded-2xl border border-sky-900/50 bg-slate-900/70 p-6">
           <h2 className="text-lg font-semibold text-white">
             Cadastrar / liberar cliente
@@ -413,83 +413,60 @@ export default function AdminPage() {
           </p>
         )}
 
-        <section className="overflow-hidden rounded-2xl border border-sky-900/50 bg-slate-900/70">
+        <section className="overflow-hidden rounded-2xl border border-sky-900/50 bg-slate-900/70 shadow-xl shadow-sky-950/20">
           <div className="border-b border-sky-950 px-6 py-4">
             <h2 className="text-lg font-semibold text-white">
-              Clientes cadastrados ({clientes.length})
+              Clientes cadastrados
             </h2>
+            <p className="mt-0.5 text-sm text-slate-400">
+              {clientes.length}{" "}
+              {clientes.length === 1 ? "usuário" : "usuários"} na tabela
+              clientes
+            </p>
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full text-left text-sm">
               <thead className="bg-slate-950/70 text-xs uppercase tracking-wide text-slate-500">
                 <tr>
-                  <th className="px-6 py-3 font-medium">Nome</th>
-                  <th className="px-6 py-3 font-medium">E-mail</th>
-                  <th className="px-6 py-3 font-medium">CPF</th>
-                  <th className="px-6 py-3 font-medium">Senha</th>
-                  <th className="px-6 py-3 font-medium">Acesso</th>
-                  <th className="px-6 py-3 font-medium">Suitability</th>
-                  <th className="px-6 py-3 font-medium">Ações</th>
+                  <th className="px-6 py-3.5 font-medium">Nome</th>
+                  <th className="px-6 py-3.5 font-medium">E-mail</th>
+                  <th className="px-6 py-3.5 font-medium">Data de Cadastro</th>
+                  <th className="px-6 py-3.5 font-medium text-right">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/80">
                 {clientes.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={7}
-                      className="px-6 py-10 text-center text-slate-500"
+                      colSpan={4}
+                      className="px-6 py-12 text-center text-slate-500"
                     >
                       Nenhum cliente cadastrado ainda.
                     </td>
                   </tr>
                 ) : (
                   clientes.map((cliente) => (
-                    <tr key={cliente.id} className="hover:bg-slate-900/80">
-                      <td className="px-6 py-4 text-white">
+                    <tr
+                      key={cliente.id}
+                      className="transition hover:bg-slate-900/80"
+                    >
+                      <td className="px-6 py-4 font-medium text-white">
                         {cliente.nome || "—"}
                       </td>
                       <td className="px-6 py-4 text-slate-300">
                         {cliente.email}
                       </td>
-                      <td className="px-6 py-4 text-slate-400">
-                        {cliente.cpf || "—"}
+                      <td className="px-6 py-4 tabular-nums text-slate-400">
+                        {formatDataCadastro(cliente.created_at)}
                       </td>
                       <td className="px-6 py-4">
-                        {cliente.senha_acesso ? (
-                          <div className="flex items-center gap-2">
-                            <code className="rounded bg-slate-950/80 px-2 py-1 text-xs text-amber-200">
-                              {cliente.senha_acesso}
-                            </code>
-                            <button
-                              type="button"
-                              onClick={() => copiarSenha(cliente.senha_acesso)}
-                              className="rounded border border-slate-700 px-2 py-1 text-xs text-slate-400 transition hover:text-sky-300"
-                            >
-                              Copiar
-                            </button>
-                          </div>
-                        ) : (
-                          <span className="text-xs text-slate-500">
-                            Use &quot;Nova senha&quot;
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
-                            cliente.acesso_liberado
-                              ? "bg-emerald-950/60 text-emerald-300"
-                              : "bg-slate-800 text-slate-400"
-                          }`}
-                        >
-                          {cliente.acesso_liberado ? "Liberado" : "Bloqueado"}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-slate-400">
-                        {cliente.perfil_suitability || "Pendente"}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap items-center justify-end gap-2">
+                          <Link
+                            href={`/admin/cliente/${cliente.id}`}
+                            className="inline-flex items-center rounded-lg bg-sky-600 px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-sky-500"
+                          >
+                            Gerenciar Carteira
+                          </Link>
                           <button
                             type="button"
                             onClick={() => toggleAcesso(cliente)}
@@ -523,4 +500,15 @@ export default function AdminPage() {
       </main>
     </div>
   );
+}
+
+function formatDataCadastro(value) {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
 }

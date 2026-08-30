@@ -3,19 +3,25 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import {
   displayName,
-  fetchAportes,
-  fetchCliente,
+  fetchUltimosPrecos,
   formatBRL,
-  formatPercent,
   formatTaxa,
-  getSessionUser,
   summarizeAportes,
+  tickerDoAporte,
 } from "@/lib/cliente";
+import { authHeaders, getAccessTokenFromBrowser } from "@/lib/auth-fetch";
 import { LogoutButton } from "@/components/app/logout-button";
 import { mustChangePassword } from "@/lib/auth-guards";
+import { SummaryCard } from "@/components/dashboard/summary-card";
+import { CarteiraCharts } from "@/components/dashboard/carteira-charts";
+import {
+  staggerContainer,
+  staggerItem,
+} from "@/components/dashboard/motion-variants";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -24,13 +30,21 @@ export default function DashboardPage() {
   const [cliente, setCliente] = useState(null);
   const [user, setUser] = useState(null);
   const [aportes, setAportes] = useState([]);
+  const [precosAtuais, setPrecosAtuais] = useState({});
 
   useEffect(() => {
     let cancelled = false;
 
     async function load() {
       try {
-        const sessionUser = await getSessionUser(supabase);
+        const {
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession();
+
+        if (sessionError) throw sessionError;
+
+        const sessionUser = session?.user ?? null;
         if (!sessionUser) {
           router.replace("/login");
           return;
@@ -41,19 +55,61 @@ export default function DashboardPage() {
           return;
         }
 
-        const clienteData = await fetchCliente(supabase, sessionUser);
+        const accessToken =
+          session.access_token ?? (await getAccessTokenFromBrowser(supabase));
+        const res = await fetch("/api/cliente/me", {
+          credentials: "same-origin",
+          headers: authHeaders(accessToken),
+        });
+        const data = await res.json();
 
-        if (!clienteData?.perfil_suitability) {
-          router.replace("/onboarding");
-          return;
+        if (!res.ok || !data.ok) {
+          if (res.status === 401) {
+            router.replace("/login");
+            return;
+          }
+          throw new Error(data.message || "Não foi possível carregar o dashboard.");
         }
 
-        const list = await fetchAportes(supabase, clienteData.id);
+        const listaAportes = data.aportes ?? [];
+
+        let precos = {};
+        try {
+          if (data.cliente?.id) {
+            const { data: aportesDb, error: aportesError } = await supabase
+              .from("aportes")
+              .select("*")
+              .eq("cliente_id", data.cliente.id);
+
+            if (aportesError) throw aportesError;
+
+            const base = aportesDb?.length > 0 ? aportesDb : listaAportes;
+            const tickers = base.map(tickerDoAporte).filter(Boolean);
+            precos = await fetchUltimosPrecos(supabase, tickers);
+
+            if (!cancelled) {
+              setAportes(base);
+              setPrecosAtuais(precos);
+            }
+          } else {
+            const tickers = listaAportes.map(tickerDoAporte).filter(Boolean);
+            precos = await fetchUltimosPrecos(supabase, tickers);
+            if (!cancelled) {
+              setAportes(listaAportes);
+              setPrecosAtuais(precos);
+            }
+          }
+        } catch (cotacaoErr) {
+          console.error("Falha ao cruzar cotações:", cotacaoErr);
+          if (!cancelled) {
+            setAportes(listaAportes);
+            setPrecosAtuais({});
+          }
+        }
 
         if (!cancelled) {
           setUser(sessionUser);
-          setCliente(clienteData);
-          setAportes(list);
+          setCliente(data.cliente);
         }
       } catch (err) {
         if (!cancelled) {
@@ -73,13 +129,22 @@ export default function DashboardPage() {
     };
   }, [router]);
 
-  const summary = useMemo(() => summarizeAportes(aportes), [aportes]);
+  const summary = useMemo(
+    () => summarizeAportes(aportes, precosAtuais),
+    [aportes, precosAtuais]
+  );
   const nome = displayName(cliente, user);
 
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-950 text-slate-400">
-        Carregando painel...
+        <div className="flex flex-col items-center gap-3">
+          <div
+            className="h-8 w-8 animate-spin rounded-full border-2 border-sky-800 border-t-sky-400"
+            aria-hidden
+          />
+          <p>Carregando painel...</p>
+        </div>
       </div>
     );
   }
@@ -114,7 +179,11 @@ export default function DashboardPage() {
       </header>
 
       <main className="relative z-10 mx-auto max-w-6xl space-y-8 px-6 py-10">
-        <div>
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+        >
           <p className="text-xs font-medium uppercase tracking-widest text-sky-600">
             Área do cliente
           </p>
@@ -127,7 +196,7 @@ export default function DashboardPage() {
               {cliente?.perfil_suitability}
             </span>
           </p>
-        </div>
+        </motion.div>
 
         {error && (
           <p
@@ -138,112 +207,140 @@ export default function DashboardPage() {
           </p>
         )}
 
-        <section className="grid gap-4 sm:grid-cols-3">
+        <motion.section
+          className="grid gap-4 sm:grid-cols-3"
+          variants={staggerContainer}
+          initial="hidden"
+          animate="show"
+        >
           <SummaryCard
             label="Patrimônio Total"
-            value={formatBRL(summary.patrimonio)}
-            hint="Com base nos aportes registrados"
+            value={summary.patrimonio}
+            format="brl"
+            hint="Quantidade × último preço de cotação"
           />
           <SummaryCard
             label="Rentabilidade"
-            value={formatPercent(summary.rentabilidade)}
-            hint="Estimativa patrimonial vs. aportado"
+            value={summary.rentabilidade}
+            format="percent"
+            hint="Diferença entre preço médio e preço atual"
             accent={
               summary.rentabilidade >= 0 ? "text-emerald-400" : "text-red-400"
             }
           />
           <SummaryCard
             label="Total Aportado"
-            value={formatBRL(summary.totalAportado)}
+            value={summary.totalAportado}
+            format="brl"
             hint="Soma dos aportes da carteira"
           />
-        </section>
+        </motion.section>
 
-        <section className="overflow-hidden rounded-2xl border border-sky-900/50 bg-slate-900/60 shadow-xl shadow-sky-950/30">
-          <div className="flex items-center justify-between border-b border-sky-950 px-6 py-4">
-            <div>
-              <h2 className="text-lg font-semibold text-white">Seus ativos</h2>
-              <p className="text-sm text-slate-400">
-                Dados da carteira vinculados à tabela de aportes
-              </p>
+        <motion.section
+          variants={staggerContainer}
+          initial="hidden"
+          animate="show"
+        >
+          <CarteiraCharts aportes={aportes} precos={precosAtuais} />
+        </motion.section>
+
+        <motion.section
+          variants={staggerContainer}
+          initial="hidden"
+          animate="show"
+        >
+          <motion.div
+            variants={staggerItem}
+            className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/60 shadow-xl shadow-sky-950/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_0_20px_rgba(56,189,248,0.15)] cursor-default"
+          >
+            <div className="flex items-center justify-between border-b border-sky-950 px-6 py-4">
+              <div>
+                <h2 className="text-lg font-semibold text-white">Seus ativos</h2>
+                <p className="text-sm text-slate-400">
+                  Dados da carteira vinculados à tabela de aportes
+                </p>
+              </div>
+              <Link
+                href="/preferencias"
+                className="hidden rounded-lg border border-sky-800/70 px-3 py-2 text-xs font-medium text-sky-300 transition hover:bg-slate-900 sm:inline-block"
+              >
+                Ajustar teses
+              </Link>
             </div>
-            <Link
-              href="/preferencias"
-              className="hidden rounded-lg border border-sky-800/70 px-3 py-2 text-xs font-medium text-sky-300 transition hover:bg-slate-900 sm:inline-block"
-            >
-              Ajustar teses
-            </Link>
-          </div>
 
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-left text-sm">
-              <thead className="bg-slate-950/70 text-xs uppercase tracking-wide text-slate-500">
-                <tr>
-                  <th className="px-6 py-3 font-medium">Tipo</th>
-                  <th className="px-6 py-3 font-medium">Ticker / Nome</th>
-                  <th className="px-6 py-3 font-medium">Quantidade</th>
-                  <th className="px-6 py-3 font-medium">Preço médio</th>
-                  <th className="px-6 py-3 font-medium">Taxa (RF)</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/80">
-                {aportes.length === 0 ? (
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-left text-sm">
+                <thead className="bg-slate-950/70 text-xs uppercase tracking-wide text-slate-500">
                   <tr>
-                    <td
-                      colSpan={5}
-                      className="px-6 py-10 text-center text-slate-500"
-                    >
-                      Nenhum aporte encontrado para este cliente.
-                    </td>
+                    <th className="px-6 py-3 font-medium">Tipo</th>
+                    <th className="px-6 py-3 font-medium">Ticker / Nome</th>
+                    <th className="px-6 py-3 font-medium">Quantidade</th>
+                    <th className="px-6 py-3 font-medium">Preço médio</th>
+                    <th className="px-6 py-3 font-medium">Preço atual</th>
+                    <th className="px-6 py-3 font-medium">Taxa (RF)</th>
                   </tr>
-                ) : (
-                  aportes.map((aporte) => (
-                    <tr
-                      key={aporte.id}
-                      className="transition hover:bg-slate-900/80"
-                    >
-                      <td className="px-6 py-4 text-slate-300">
-                        {aporte.tipo_ativo || aporte.tipo || "—"}
-                      </td>
-                      <td className="px-6 py-4 font-medium text-white">
-                        {aporte.ticker || aporte.nome || "—"}
-                        {aporte.ticker && aporte.nome ? (
-                          <span className="mt-0.5 block text-xs font-normal text-slate-500">
-                            {aporte.nome}
-                          </span>
-                        ) : null}
-                      </td>
-                      <td className="px-6 py-4 tabular-nums text-slate-300">
-                        {Number(aporte.quantidade ?? 0).toLocaleString("pt-BR")}
-                      </td>
-                      <td className="px-6 py-4 tabular-nums text-slate-300">
-                        {formatBRL(aporte.preco_medio ?? aporte.preco ?? 0)}
-                      </td>
-                      <td className="px-6 py-4 tabular-nums text-sky-300">
-                        {formatTaxa(aporte)}
+                </thead>
+                <tbody className="divide-y divide-slate-800/80">
+                  {aportes.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={6}
+                        className="px-6 py-10 text-center text-slate-500"
+                      >
+                        Nenhum aporte encontrado para este cliente.
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      </main>
-    </div>
-  );
-}
+                  ) : (
+                    aportes.map((aporte) => {
+                      const ticker = tickerDoAporte(aporte);
+                      const precoMedio = Number(
+                        aporte.preco_medio ?? aporte.preco ?? 0
+                      );
+                      const precoAtual =
+                        ticker && precosAtuais[ticker] != null
+                          ? Number(precosAtuais[ticker])
+                          : null;
 
-function SummaryCard({ label, value, hint, accent }) {
-  return (
-    <div className="rounded-2xl border border-sky-900/50 bg-slate-900/70 p-6 shadow-lg shadow-sky-950/20">
-      <p className="text-sm font-medium text-slate-400">{label}</p>
-      <p
-        className={`mt-3 text-2xl font-bold tracking-tight ${accent || "text-white"}`}
-      >
-        {value}
-      </p>
-      <p className="mt-2 text-xs text-slate-500">{hint}</p>
+                      return (
+                        <tr
+                          key={aporte.id}
+                          className="transition hover:bg-slate-900/80"
+                        >
+                          <td className="px-6 py-4 text-slate-300">
+                            {aporte.tipo_ativo || aporte.tipo || "—"}
+                          </td>
+                          <td className="px-6 py-4 font-medium text-white">
+                            {aporte.ticker || aporte.ativo || aporte.nome || "—"}
+                            {(aporte.ticker || aporte.ativo) && aporte.nome ? (
+                              <span className="mt-0.5 block text-xs font-normal text-slate-500">
+                                {aporte.nome}
+                              </span>
+                            ) : null}
+                          </td>
+                          <td className="px-6 py-4 tabular-nums text-slate-300">
+                            {Number(aporte.quantidade ?? 0).toLocaleString(
+                              "pt-BR"
+                            )}
+                          </td>
+                          <td className="px-6 py-4 tabular-nums text-slate-300">
+                            {formatBRL(precoMedio)}
+                          </td>
+                          <td className="px-6 py-4 tabular-nums text-sky-300">
+                            {precoAtual != null ? formatBRL(precoAtual) : "—"}
+                          </td>
+                          <td className="px-6 py-4 tabular-nums text-sky-300">
+                            {formatTaxa(aporte)}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </motion.div>
+        </motion.section>
+      </main>
     </div>
   );
 }

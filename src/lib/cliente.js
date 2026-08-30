@@ -13,11 +13,62 @@ export { linkClienteSession, isAcessoLiberado, fetchClienteByEmail };
 
 export async function getSessionUser(supabase) {
   const {
-    data: { user },
+    data: { session },
     error,
-  } = await supabase.auth.getUser();
+  } = await supabase.auth.getSession();
   if (error) throw error;
-  return user;
+  return session?.user ?? null;
+}
+
+/** Normaliza ticker B3 para cruzar com `cotacoes_historicas.ativo`. */
+export function tickerDoAporte(aporte) {
+  return String(aporte?.ticker || aporte?.ativo || "")
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, "")
+    .replace(/\.SA$/i, "");
+}
+
+/**
+ * Último preço de fechamento por ativo em `cotacoes_historicas`.
+ * @returns {Promise<Record<string, number>>}
+ */
+export async function fetchUltimosPrecos(supabase, tickers) {
+  const unicos = [
+    ...new Set(
+      (tickers ?? [])
+        .map((t) =>
+          String(t ?? "")
+            .trim()
+            .toUpperCase()
+            .replace(/\s+/g, "")
+            .replace(/\.SA$/i, "")
+        )
+        .filter(Boolean)
+    ),
+  ];
+
+  if (unicos.length === 0) return {};
+
+  const { data, error } = await supabase
+    .from("cotacoes_historicas")
+    .select("ativo, preco_fechamento, data_cotacao")
+    .in("ativo", unicos)
+    .order("data_cotacao", { ascending: false });
+
+  if (error) throw error;
+
+  const precos = {};
+  for (const row of data ?? []) {
+    const ativo = String(row.ativo ?? "")
+      .trim()
+      .toUpperCase();
+    if (!ativo || precos[ativo] != null) continue;
+    const preco = Number(row.preco_fechamento);
+    if (!Number.isNaN(preco)) precos[ativo] = preco;
+  }
+
+  return precos;
 }
 
 export async function fetchCliente(supabase, user) {
@@ -93,24 +144,36 @@ export function displayName(cliente, user) {
   );
 }
 
-export function summarizeAportes(aportes) {
+/**
+ * @param {Array} aportes
+ * @param {Record<string, number>} [precosAtuais] mapa ticker → preço atual (cotacoes_historicas)
+ */
+export function summarizeAportes(aportes, precosAtuais = {}) {
   let totalAportado = 0;
   let patrimonio = 0;
 
   for (const a of aportes) {
     const qtd = Number(a.quantidade ?? 0);
-    const preco = Number(a.preco_medio ?? a.preco ?? 0);
+    const precoMedio = Number(a.preco_medio ?? a.preco ?? 0);
+    const ticker = tickerDoAporte(a);
+    const cotacao = ticker ? precosAtuais[ticker] : undefined;
+    const precoAtual =
+      cotacao != null && !Number.isNaN(Number(cotacao))
+        ? Number(cotacao)
+        : precoMedio;
+
     const valor =
       a.valor_aportado != null
         ? Number(a.valor_aportado)
         : a.valor != null
           ? Number(a.valor)
-          : qtd * preco;
+          : qtd * precoMedio;
 
     totalAportado += valor;
-    patrimonio += qtd * preco || valor;
+    patrimonio += qtd * precoAtual || valor;
   }
 
+  // Rentabilidade: diferença patrimonial (preço atual vs. preço médio / aportado)
   const rentabilidade =
     totalAportado > 0 ? ((patrimonio - totalAportado) / totalAportado) * 100 : 0;
 

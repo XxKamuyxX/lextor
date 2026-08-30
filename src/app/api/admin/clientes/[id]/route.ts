@@ -13,6 +13,38 @@ function errPayload(err: unknown) {
   };
 }
 
+export async function GET(_request: Request, { params }: Params) {
+  try {
+    await requireAdminSession();
+    const { id } = await params;
+    const supabase = createAdminClient();
+
+    const { data, error } = await supabase
+      .from("clientes")
+      .select(
+        "id, email, nome, cpf, acesso_liberado, perfil_suitability, created_at, user_id, preferencias_investimento"
+      )
+      .eq("id", id)
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!data) {
+      return NextResponse.json(
+        { message: "Cliente não encontrado." },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({ cliente: data });
+  } catch (err) {
+    const { status, message } = errPayload(err);
+    return NextResponse.json(
+      { message: message || "Erro ao carregar cliente." },
+      { status }
+    );
+  }
+}
+
 export async function PATCH(request: Request, { params }: Params) {
   try {
     await requireAdminSession();
@@ -24,6 +56,18 @@ export async function PATCH(request: Request, { params }: Params) {
     if (body.email != null) updates.email = normalizeEmail(body.email);
     if (typeof body.acesso_liberado === "boolean") {
       updates.acesso_liberado = body.acesso_liberado;
+    }
+    if (body.preferencias_investimento != null) {
+      if (
+        typeof body.preferencias_investimento !== "object" ||
+        Array.isArray(body.preferencias_investimento)
+      ) {
+        return NextResponse.json(
+          { message: "preferencias_investimento deve ser um objeto JSON." },
+          { status: 400 }
+        );
+      }
+      updates.preferencias_investimento = body.preferencias_investimento;
     }
 
     if (Object.keys(updates).length === 0) {

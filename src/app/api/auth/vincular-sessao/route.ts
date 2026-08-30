@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { linkClienteSession, MENSAGEM_ACESSO_NEGADO } from "@/lib/acesso";
-import { mustChangePassword } from "@/lib/auth-guards";
+import { hasPerfilSuitability, mustChangePassword } from "@/lib/auth-guards";
 
 async function resolveUser(request: Request) {
   const authHeader = request.headers.get("authorization");
@@ -54,7 +54,7 @@ export async function POST(request: Request) {
     let redirect = "/dashboard";
     if (mustChangePassword(user)) {
       redirect = "/alterar-senha";
-    } else if (!cliente.perfil_suitability) {
+    } else if (!hasPerfilSuitability(cliente.perfil_suitability)) {
       redirect = "/onboarding";
     }
 

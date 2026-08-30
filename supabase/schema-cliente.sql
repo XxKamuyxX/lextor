@@ -49,11 +49,13 @@ alter table public.aportes
   add column if not exists cliente_id uuid references public.clientes (id),
   add column if not exists tipo_ativo text,
   add column if not exists ticker text,
+  add column if not exists ativo text,
   add column if not exists nome text,
   add column if not exists quantidade numeric,
   add column if not exists preco_medio numeric,
   add column if not exists taxa_contratada numeric,
-  add column if not exists valor_aportado numeric;
+  add column if not exists valor_aportado numeric,
+  add column if not exists data_aporte date;
 
 create index if not exists aportes_cliente_id_idx on public.aportes (cliente_id);
 
