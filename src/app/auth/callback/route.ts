@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { linkClienteSession } from "@/lib/acesso";
 import { mustChangePassword } from "@/lib/auth-guards";
@@ -17,7 +18,8 @@ export async function GET(request: Request) {
         data: { user },
       } = await supabase.auth.getUser();
 
-      const cliente = await linkClienteSession(supabase, user);
+      const admin = createAdminClient();
+      const cliente = await linkClienteSession(admin, user);
 
       if (!cliente) {
         await supabase.auth.signOut();

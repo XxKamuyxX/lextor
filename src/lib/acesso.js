@@ -46,6 +46,7 @@ export async function verificarAcessoPorEmail(supabase, email) {
 
 /**
  * Vincula a sessão auth a um cliente já cadastrado (não cria registro novo).
+ * Use service role (admin) para garantir leitura/gravação sem depender de RLS.
  */
 export async function linkClienteSession(supabase, user) {
   if (!user) return null;
@@ -64,13 +65,19 @@ export async function linkClienteSession(supabase, user) {
     cliente = await fetchClienteByEmail(supabase, user.email);
   }
 
+  if (!cliente && user.email) {
+    cliente = await fetchClienteByEmail(supabase, normalizeEmail(user.email));
+  }
+
   if (!isAcessoLiberado(cliente)) return null;
 
-  if (!cliente.user_id) {
-    await supabase
+  if (!cliente.user_id || cliente.user_id !== user.id) {
+    const { error: linkError } = await supabase
       .from("clientes")
       .update({ user_id: user.id })
       .eq("id", cliente.id);
+
+    if (linkError) throw linkError;
     cliente = { ...cliente, user_id: user.id };
   }
 

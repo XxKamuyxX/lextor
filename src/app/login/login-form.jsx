@@ -5,8 +5,6 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { MENSAGEM_ACESSO_NEGADO, normalizeEmail } from "@/lib/acesso";
-import { mustChangePassword } from "@/lib/auth-guards";
-import { fetchCliente } from "@/lib/cliente";
 
 function mapSignInError(signInError) {
   const msg = signInError?.message?.toLowerCase() ?? "";
@@ -33,7 +31,9 @@ export default function LoginForm() {
   useEffect(() => {
     const err = searchParams.get("error");
     if (err === "nao_autorizado") {
-      setError(MENSAGEM_ACESSO_NEGADO);
+      setError(
+        `${MENSAGEM_ACESSO_NEGADO} Use exatamente o e-mail cadastrado no admin.`
+      );
     } else if (err === "auth_callback_failed") {
       setError("Falha na autenticação. Tente entrar com e-mail e senha.");
     }
@@ -65,42 +65,47 @@ export default function LoginForm() {
         body: JSON.stringify({ email: emailNormalizado }),
       });
 
-      const { autorizado, message: deniedMessage } = await check.json();
+      const checkData = await check.json();
 
-      if (!autorizado) {
-        setError(deniedMessage || MENSAGEM_ACESSO_NEGADO);
+      if (!check.ok || !checkData.autorizado) {
+        setError(
+          checkData.message ||
+            `${MENSAGEM_ACESSO_NEGADO} Verifique se digitou o mesmo e-mail cadastrado no admin.`
+        );
         setLoading(false);
         return;
       }
 
-      const { data: signInData, error: signInError } =
-        await supabase.auth.signInWithPassword({
-          email: emailNormalizado,
-          password,
-        });
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: emailNormalizado,
+        password,
+      });
 
       if (signInError) {
         setError(mapSignInError(signInError));
         return;
       }
 
-      const user = signInData.user;
-      const redirect = searchParams.get("redirect");
+      const vinculo = await fetch("/api/auth/vincular-sessao", {
+        method: "POST",
+      });
+      const vinculoData = await vinculo.json();
 
-      if (mustChangePassword(user)) {
-        router.replace("/alterar-senha");
-        router.refresh();
+      if (!vinculo.ok || !vinculoData.ok) {
+        setError(
+          vinculoData.message ||
+            `${MENSAGEM_ACESSO_NEGADO} Verifique se digitou o mesmo e-mail cadastrado no admin.`
+        );
         return;
       }
 
-      const cliente = await fetchCliente(supabase, user);
-      if (!cliente?.perfil_suitability) {
-        router.replace("/onboarding");
-      } else if (redirect && redirect.startsWith("/")) {
-        router.replace(redirect);
-      } else {
-        router.replace("/dashboard");
-      }
+      const redirect = searchParams.get("redirect");
+      const destino =
+        redirect && redirect.startsWith("/") && redirect !== "/login"
+          ? redirect
+          : vinculoData.redirect || "/dashboard";
+
+      router.replace(destino);
       router.refresh();
     } catch {
       setError("Erro ao verificar acesso. Tente novamente em instantes.");
