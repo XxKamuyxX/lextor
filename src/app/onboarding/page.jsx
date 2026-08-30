@@ -6,10 +6,8 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import {
   ensureCliente,
-  fetchCliente,
   getSessionUser,
 } from "@/lib/cliente";
-import { isAcessoLiberado } from "@/lib/acesso";
 import { mustChangePassword } from "@/lib/auth-guards";
 import {
   SUITABILITY_QUESTIONS,
@@ -39,16 +37,21 @@ export default function OnboardingPage() {
           return;
         }
 
-        const cliente = await fetchCliente(supabase, sessionUser);
-        if (!isAcessoLiberado(cliente)) {
-          router.replace("/login?error=nao_autorizado");
-          return;
-        }
         if (mustChangePassword(sessionUser)) {
           router.replace("/alterar-senha");
           return;
         }
-        if (cliente?.perfil_suitability) {
+
+        const sessao = await fetch("/api/auth/vincular-sessao", {
+          method: "POST",
+          credentials: "same-origin",
+        });
+        const sessaoData = await sessao.json();
+        if (!sessao.ok || !sessaoData.ok) {
+          router.replace("/login?error=nao_autorizado");
+          return;
+        }
+        if (sessaoData.perfil_suitability) {
           router.replace("/dashboard");
           return;
         }

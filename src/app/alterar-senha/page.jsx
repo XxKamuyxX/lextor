@@ -6,8 +6,16 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { mustChangePassword } from "@/lib/auth-guards";
 import { isSenhaValida } from "@/lib/password";
-import { fetchCliente, getSessionUser } from "@/lib/cliente";
-import { isAcessoLiberado } from "@/lib/acesso";
+import { getSessionUser } from "@/lib/cliente";
+
+async function validarSessaoMembro() {
+  const res = await fetch("/api/auth/vincular-sessao", {
+    method: "POST",
+    credentials: "same-origin",
+  });
+  const data = await res.json();
+  return { ok: res.ok && data.ok, data };
+}
 
 export default function AlterarSenhaPage() {
   const router = useRouter();
@@ -16,6 +24,7 @@ export default function AlterarSenhaPage() {
   const [confirmarSenha, setConfirmarSenha] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [clienteId, setClienteId] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -28,17 +37,17 @@ export default function AlterarSenhaPage() {
           return;
         }
 
-        const cliente = await fetchCliente(supabase, user);
-        if (!isAcessoLiberado(cliente)) {
+        const { ok, data } = await validarSessaoMembro();
+        if (!ok) {
           await supabase.auth.signOut();
           router.replace("/login?error=nao_autorizado");
           return;
         }
 
+        if (!cancelled) setClienteId(data.clienteId ?? null);
+
         if (!mustChangePassword(user)) {
-          router.replace(
-            cliente?.perfil_suitability ? "/dashboard" : "/onboarding"
-          );
+          router.replace(data.redirect || "/dashboard");
         }
       } catch (err) {
         if (!cancelled) {
@@ -79,16 +88,14 @@ export default function AlterarSenhaPage() {
 
       if (updateError) throw updateError;
 
-      const cliente = await fetchCliente(supabase, user);
-      if (cliente?.id) {
+      if (clienteId) {
         await supabase
           .from("clientes")
           .update({ senha_acesso: null })
-          .eq("id", cliente.id);
+          .eq("id", clienteId);
       }
 
-      router.replace("/onboarding");
-      router.refresh();
+      window.location.assign("/onboarding");
     } catch (err) {
       setError(
         err?.message ||
@@ -125,9 +132,7 @@ export default function AlterarSenhaPage() {
           <p className="mt-1 text-xs font-medium uppercase tracking-widest text-sky-600">
             Primeiro acesso
           </p>
-          <h1 className="mt-6 text-2xl font-bold text-white">
-            Defina sua senha
-          </h1>
+          <h1 className="mt-6 text-2xl font-bold text-white">Defina sua senha</h1>
           <p className="mt-2 text-sm leading-relaxed text-slate-400">
             Por segurança, substitua a senha temporária enviada pela consultoria
             antes de continuar.

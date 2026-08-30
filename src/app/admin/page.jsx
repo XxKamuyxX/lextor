@@ -17,8 +17,14 @@ export default function AdminPage() {
   const [senhaGerada, setSenhaGerada] = useState(null);
 
   const loadClientes = useCallback(async () => {
-    const res = await fetch("/api/admin/clientes");
+    const res = await fetch("/api/admin/clientes", {
+      credentials: "same-origin",
+    });
     const data = await res.json();
+    if (res.status === 401) {
+      setAutenticado(false);
+      throw new Error("Sessão admin expirada. Entre novamente com a senha admin.");
+    }
     if (!res.ok) throw new Error(data.message || "Falha ao listar clientes.");
     setClientes(data.clientes || []);
   }, []);
@@ -50,6 +56,7 @@ export default function AdminPage() {
     try {
       const res = await fetch("/api/admin/login", {
         method: "POST",
+        credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ password }),
       });
@@ -84,6 +91,7 @@ export default function AdminPage() {
     try {
       const res = await fetch("/api/admin/clientes", {
         method: "POST",
+        credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email,
@@ -93,6 +101,10 @@ export default function AdminPage() {
         }),
       });
       const data = await res.json();
+      if (res.status === 401) {
+        setAutenticado(false);
+        throw new Error("Sessão admin expirada. Entre novamente com a senha admin.");
+      }
       if (!res.ok) throw new Error(data.message || "Erro ao cadastrar.");
 
       setMessage(data.message);
@@ -121,9 +133,13 @@ export default function AdminPage() {
     try {
       const res = await fetch(
         `/api/admin/clientes/${cliente.id}/reset-password`,
-        { method: "POST" }
+        { method: "POST", credentials: "same-origin" }
       );
       const data = await res.json();
+      if (res.status === 401) {
+        setAutenticado(false);
+        throw new Error("Sessão admin expirada. Entre novamente com a senha admin.");
+      }
       if (!res.ok) throw new Error(data.message || "Erro ao gerar senha.");
 
       setMessage(data.message);

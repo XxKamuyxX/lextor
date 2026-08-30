@@ -44,13 +44,13 @@ export async function POST(_request: Request, { params }: Params) {
 
     const { error: updateError } = await supabase
       .from("clientes")
-      .update({ user_id: userId, senha_acesso: senhaTemporaria })
+      .update({ user_id: userId, senha_acesso: senhaTemporaria, acesso_liberado: true })
       .eq("id", cliente.id);
 
     if (updateError) {
       await supabase
         .from("clientes")
-        .update({ user_id: userId })
+        .update({ user_id: userId, acesso_liberado: true })
         .eq("id", cliente.id);
       await salvarSenhaAcesso(supabase, cliente.id, senhaTemporaria);
     }

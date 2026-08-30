@@ -75,18 +75,26 @@ export default function LoginForm() {
         return;
       }
 
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: emailNormalizado,
-        password,
-      });
+      const { data: signInData, error: signInError } =
+        await supabase.auth.signInWithPassword({
+          email: emailNormalizado,
+          password,
+        });
 
       if (signInError) {
         setError(mapSignInError(signInError));
         return;
       }
 
+      await supabase.auth.getSession();
+
+      const accessToken = signInData.session?.access_token;
       const vinculo = await fetch("/api/auth/vincular-sessao", {
         method: "POST",
+        credentials: "same-origin",
+        headers: accessToken
+          ? { Authorization: `Bearer ${accessToken}` }
+          : undefined,
       });
       const vinculoData = await vinculo.json();
 

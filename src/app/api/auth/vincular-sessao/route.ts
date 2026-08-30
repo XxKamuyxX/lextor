@@ -4,15 +4,33 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { linkClienteSession, MENSAGEM_ACESSO_NEGADO } from "@/lib/acesso";
 import { mustChangePassword } from "@/lib/auth-guards";
 
-export async function POST() {
-  try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error: sessionError,
-    } = await supabase.auth.getUser();
+async function resolveUser(request: Request) {
+  const authHeader = request.headers.get("authorization");
+  const admin = createAdminClient();
 
-    if (sessionError || !user) {
+  if (authHeader?.startsWith("Bearer ")) {
+    const token = authHeader.slice(7).trim();
+    if (token) {
+      const { data, error } = await admin.auth.getUser(token);
+      if (!error && data.user) return { user: data.user, supabase: await createClient() };
+    }
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+
+  if (error || !user) return { user: null, supabase };
+  return { user, supabase };
+}
+
+export async function POST(request: Request) {
+  try {
+    const { user, supabase } = await resolveUser(request);
+
+    if (!user) {
       return NextResponse.json(
         { ok: false, message: "Sessão inválida. Tente entrar novamente." },
         { status: 401 }
@@ -23,7 +41,7 @@ export async function POST() {
     const cliente = await linkClienteSession(admin, user);
 
     if (!cliente) {
-      await supabase.auth.signOut();
+      if (supabase) await supabase.auth.signOut();
       return NextResponse.json(
         {
           ok: false,
@@ -40,7 +58,13 @@ export async function POST() {
       redirect = "/onboarding";
     }
 
-    return NextResponse.json({ ok: true, redirect });
+    return NextResponse.json({
+      ok: true,
+      redirect,
+      clienteId: cliente.id,
+      mustChangePassword: mustChangePassword(user),
+      perfil_suitability: cliente.perfil_suitability ?? null,
+    });
   } catch (err) {
     const message =
       err instanceof Error &&
