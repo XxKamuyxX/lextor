@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
+import { rewriteStaleCssChunk } from "@/lib/stale-chunk-fallback";
 
 function applyNoStoreCache(response: NextResponse) {
   response.headers.set(
@@ -12,6 +13,9 @@ function applyNoStoreCache(response: NextResponse) {
 }
 
 export async function middleware(request: NextRequest) {
+  const staleCssRewrite = rewriteStaleCssChunk(request);
+  if (staleCssRewrite) return staleCssRewrite;
+
   const response = await updateSession(request);
 
   if (!request.nextUrl.pathname.startsWith("/api/")) {
@@ -23,6 +27,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    "/_next/static/chunks/:path*",
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
