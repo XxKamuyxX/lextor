@@ -14,17 +14,17 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "ETR | Consultoria de Investimentos de Alto Padrão",
-    template: "%s | ETR",
+    default: "LEXTOR | Consultoria Patrimonial Exclusiva",
+    template: "%s | LEXTOR",
   },
   description:
-    "Consultoria patrimonial institucional: planejamento, alocação estratégica, suitability e acompanhamento de carteira para investidores exigentes.",
+    "Consultoria patrimonial exclusiva e sem conflito de interesses. Protegemos e multiplicamos o patrimônio construído pelo seu trabalho.",
   metadataBase: new URL("https://alexjdantas.com"),
   openGraph: {
-    title: "ETR | Consultoria de Investimentos",
+    title: "LEXTOR | Consultoria Patrimonial Exclusiva",
     description:
-      "Patrimônio com visão institucional. Estratégia, governança e performance no longo prazo.",
-    siteName: "ETR",
+      "O seu trabalho constrói a sua riqueza. A LEXTOR protege e multiplica o seu patrimônio.",
+    siteName: "LEXTOR",
     locale: "pt_BR",
     type: "website",
   },

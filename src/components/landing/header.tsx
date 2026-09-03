@@ -2,10 +2,11 @@ import Link from "next/link";
 import { Logo } from "@/components/landing/logo";
 
 const nav = [
-  { href: "#servicos", label: "Serviços" },
+  { href: "#filosofia", label: "Filosofia" },
+  { href: "#para-quem", label: "Para quem é" },
+  { href: "#solucoes", label: "Soluções" },
   { href: "#metodologia", label: "Metodologia" },
-  { href: "#sobre", label: "Sobre" },
-  { href: "#contato", label: "Contato" },
+  { href: "#faq", label: "FAQ" },
 ];
 
 export function LandingHeader() {
@@ -14,7 +15,7 @@ export function LandingHeader() {
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6 lg:px-8">
         <Logo size="sm" />
 
-        <nav className="hidden items-center gap-10 md:flex">
+        <nav className="hidden items-center gap-8 lg:flex">
           {nav.map((item) => (
             <a
               key={item.href}
@@ -33,12 +34,12 @@ export function LandingHeader() {
           >
             Área do cliente
           </Link>
-          <Link
-            href="/login"
-            className="rounded-full bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-900/40 transition hover:bg-blue-500"
+          <a
+            href="mailto:contato@alexjdantas.com?subject=Agendar%20Sess%C3%A3o%20de%20Alinhamento"
+            className="rounded-full bg-blue-700 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-950/40 transition hover:bg-blue-800"
           >
-            Entrar
-          </Link>
+            Agendar
+          </a>
         </div>
       </div>
     </header>

@@ -19,7 +19,7 @@ export function Logo({ href = "/", size = "md", showLink = true }: LogoProps) {
   const img = (
     <Image
       src="/brand/logo-etr.png"
-      alt="ETR — Consultoria de Investimentos"
+      alt="LEXTOR — Consultoria Patrimonial"
       width={width}
       height={height}
       className={className}
