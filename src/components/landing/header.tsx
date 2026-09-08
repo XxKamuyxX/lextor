@@ -5,6 +5,7 @@ const nav = [
   { href: "#filosofia", label: "Filosofia" },
   { href: "#para-quem", label: "Para quem é" },
   { href: "#solucoes", label: "Soluções" },
+  { href: "#tecnologia", label: "Tecnologia" },
   { href: "#metodologia", label: "Metodologia" },
   { href: "#faq", label: "FAQ" },
 ];

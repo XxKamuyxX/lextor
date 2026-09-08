@@ -32,6 +32,11 @@ export function LandingFooter() {
                   </a>
                 </li>
                 <li>
+                  <a href="#tecnologia" className="transition hover:text-blue-400">
+                    Tecnologia
+                  </a>
+                </li>
+                <li>
                   <a href="#metodologia" className="transition hover:text-blue-400">
                     Metodologia
                   </a>

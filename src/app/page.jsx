@@ -2,10 +2,11 @@ import { LandingHeader } from "@/components/landing/header";
 import { LandingFooter } from "@/components/landing/footer";
 import { HeroSection } from "@/components/landing/HeroSection";
 import { PhilosophySection } from "@/components/landing/PhilosophySection";
-import { AudienceSection } from "@/components/landing/AudienceSection";
-import { SolutionsSection } from "@/components/landing/SolutionsSection";
-import { MethodologySection } from "@/components/landing/MethodologySection";
-import { FaqSection } from "@/components/landing/FaqSection";
+import { TargetProfile } from "@/components/landing/TargetProfile";
+import { Solutions } from "@/components/landing/Solutions";
+import { DashboardTeaser } from "@/components/landing/DashboardTeaser";
+import { Methodology } from "@/components/landing/Methodology";
+import { Faq } from "@/components/landing/Faq";
 import { AuthCodeRedirect } from "@/components/auth-code-redirect";
 
 // Evita HTML estático desatualizado após deploy (causava CSS 404 na Hostinger).
@@ -20,10 +21,11 @@ export default function HomePage() {
       <main className="flex-1">
         <HeroSection />
         <PhilosophySection />
-        <AudienceSection />
-        <SolutionsSection />
-        <MethodologySection />
-        <FaqSection />
+        <TargetProfile />
+        <Solutions />
+        <DashboardTeaser />
+        <Methodology />
+        <Faq />
       </main>
       <LandingFooter />
     </div>

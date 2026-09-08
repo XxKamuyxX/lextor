@@ -1,8 +1,21 @@
+"use client";
+
+import { motion } from "framer-motion";
+
 export function PhilosophySection() {
   return (
-    <section id="filosofia" className="bg-black px-6 py-24 sm:py-28">
-      <div className="mx-auto max-w-4xl text-center">
-        <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
+    <section
+      id="filosofia"
+      className="border-t border-white/5 bg-[#0a0a0a] px-6 py-24 sm:py-28"
+    >
+      <motion.div
+        initial={{ opacity: 0, y: 24 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-100px" }}
+        transition={{ duration: 0.6 }}
+        className="mx-auto max-w-4xl text-center"
+      >
+        <h2 className="font-serif text-3xl font-bold tracking-tight text-white sm:text-4xl">
           A verdade que o mercado tenta esconder de você
         </h2>
 
@@ -21,7 +34,7 @@ export function PhilosophySection() {
             construção de uma esteira de renda passiva sólida.
           </p>
         </div>
-      </div>
+      </motion.div>
     </section>
   );
 }
