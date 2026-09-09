@@ -8,7 +8,7 @@ export function LandingFooter() {
         <div className="flex flex-col gap-12 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <Logo size="sm" showLink={false} />
-            <p className="mt-4 max-w-sm text-sm leading-relaxed text-slate-500">
+            <p className="mt-4 max-w-sm font-sans text-sm leading-relaxed text-slate-300">
               LEXTOR — consultoria patrimonial exclusiva, sem conflito de
               interesses. Protegemos e multiplicamos o patrimônio construído
               pelo seu trabalho.
@@ -20,7 +20,7 @@ export function LandingFooter() {
               <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">
                 Navegação
               </p>
-              <ul className="mt-4 space-y-2 text-sm text-slate-400">
+              <ul className="mt-4 space-y-2 font-sans text-sm text-slate-300">
                 <li>
                   <a href="#filosofia" className="transition hover:text-blue-400">
                     Filosofia
@@ -52,7 +52,7 @@ export function LandingFooter() {
               <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">
                 Plataforma
               </p>
-              <ul className="mt-4 space-y-2 text-sm text-slate-400">
+              <ul className="mt-4 space-y-2 font-sans text-sm text-slate-300">
                 <li>
                   <Link href="/login" className="transition hover:text-blue-400">
                     Área do cliente
@@ -69,7 +69,7 @@ export function LandingFooter() {
               <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">
                 Contato
               </p>
-              <ul className="mt-4 space-y-2 text-sm text-slate-400">
+              <ul className="mt-4 space-y-2 font-sans text-sm text-slate-300">
                 <li>
                   <a
                     href="mailto:contato@alexjdantas.com"

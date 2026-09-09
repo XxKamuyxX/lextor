@@ -19,7 +19,7 @@ export function PhilosophySection() {
           A verdade que o mercado tenta esconder de você
         </h2>
 
-        <div className="mt-10 space-y-6 text-lg leading-relaxed text-slate-200">
+        <div className="mt-10 space-y-6 font-sans text-lg leading-relaxed text-slate-300">
           <p>
             O mercado financeiro não serve para te deixar rico. Se você busca
             atalhos, dicas quentes ou multiplicação instantânea, a LEXTOR não é

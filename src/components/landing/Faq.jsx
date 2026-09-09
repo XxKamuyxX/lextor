@@ -64,7 +64,7 @@ export function Faq() {
                   aria-expanded={isOpen}
                   className="flex w-full items-center justify-between gap-6 px-6 py-5 text-left"
                 >
-                  <span className="font-serif text-base font-semibold tracking-tight text-white sm:text-lg">
+                  <span className="font-sans text-base font-semibold tracking-tight text-white sm:text-lg">
                     {faq.question}
                   </span>
                   <motion.span
@@ -87,7 +87,7 @@ export function Faq() {
                       transition={{ duration: 0.32, ease: "easeInOut" }}
                       className="overflow-hidden"
                     >
-                      <p className="px-6 pb-6 text-base leading-relaxed text-slate-400">
+                      <p className="px-6 pb-6 font-sans text-base leading-relaxed text-slate-300">
                         {faq.answer}
                       </p>
                     </motion.div>

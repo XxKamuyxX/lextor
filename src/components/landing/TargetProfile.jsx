@@ -44,10 +44,10 @@ export function TargetProfile() {
               transition={{ duration: 0.55, delay: index * 0.1 }}
               className="rounded-2xl border border-white/5 bg-white/[0.02] p-8 backdrop-blur-lg transition duration-300 hover:border-blue-700/30 hover:shadow-[0_0_30px_rgba(29,78,216,0.15)]"
             >
-              <h3 className="font-serif text-lg font-semibold tracking-tight text-blue-400">
+              <h3 className="font-sans text-lg font-semibold tracking-tight text-blue-400">
                 {block.title}
               </h3>
-              <p className="mt-4 text-base leading-relaxed text-slate-400">
+              <p className="mt-4 font-sans text-base leading-relaxed text-slate-300">
                 {block.text}
               </p>
             </motion.article>

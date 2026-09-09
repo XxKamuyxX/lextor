@@ -20,7 +20,9 @@ export function ChartTooltip({ active, payload, label }) {
           const name = entry?.name ?? entry?.dataKey ?? "Valor";
           const isMoney =
             typeof name === "string" &&
-            /valor|patrim|preço|preco|aport/i.test(name);
+            /valor|patrim|preço|preco|aport|total|provento|dividendo|renda|recebido/i.test(
+              name
+            );
 
           const display =
             typeof raw === "number"

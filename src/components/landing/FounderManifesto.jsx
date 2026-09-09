@@ -22,7 +22,7 @@ export function FounderManifesto() {
         transition={{ duration: 0.7 }}
         className="mx-auto max-w-3xl"
       >
-        <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">
+        <p className="font-sans text-xs font-semibold uppercase tracking-widest text-slate-400">
           Manifesto do fundador
         </p>
 
@@ -35,7 +35,7 @@ export function FounderManifesto() {
           aria-hidden
         />
 
-        <div className="mt-10 space-y-6 text-lg leading-relaxed text-slate-300">
+        <div className="mt-10 space-y-6 font-sans text-lg leading-relaxed text-slate-300">
           {paragraphs.map((paragraph, index) => (
             <motion.p
               key={paragraph.slice(0, 32)}
@@ -56,8 +56,8 @@ export function FounderManifesto() {
           transition={{ duration: 0.55, delay: 0.2 }}
           className="mt-12 border-t border-white/5 pt-8"
         >
-          <p className="font-serif text-2xl text-white">Alex Dantas</p>
-          <p className="mt-1 text-sm uppercase tracking-widest text-blue-400">
+          <p className="font-sans text-2xl font-medium text-white">Alex Dantas</p>
+          <p className="mt-1 font-sans text-sm uppercase tracking-widest text-blue-400">
             Fundador
           </p>
         </motion.div>

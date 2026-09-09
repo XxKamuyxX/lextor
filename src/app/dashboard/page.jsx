@@ -19,6 +19,7 @@ import { mustChangePassword } from "@/lib/auth-guards";
 import { SummaryCard } from "@/components/dashboard/summary-card";
 import { CarteiraCharts } from "@/components/dashboard/carteira-charts";
 import { BenchmarkComparison } from "@/components/dashboard/benchmark-comparison";
+import { PassiveIncomeChart } from "@/components/dashboard/PassiveIncomeChart";
 import {
   staggerContainer,
   staggerItem,
@@ -210,6 +211,14 @@ export default function DashboardPage() {
             format="brl"
             hint="Soma dos aportes da carteira"
           />
+        </motion.section>
+
+        <motion.section
+          variants={staggerContainer}
+          initial="hidden"
+          animate="show"
+        >
+          <PassiveIncomeChart accessToken={accessToken} />
         </motion.section>
 
         <motion.section

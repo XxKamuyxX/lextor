@@ -19,7 +19,7 @@ export function HeroSection() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="text-xs font-semibold uppercase tracking-[0.35em] text-blue-500"
+          className="font-sans text-xs font-semibold uppercase tracking-[0.35em] text-blue-500"
         >
           LEXTOR
         </motion.p>
@@ -40,7 +40,7 @@ export function HeroSection() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.16 }}
-          className="mx-auto mt-8 max-w-3xl text-lg leading-relaxed text-slate-200 sm:text-xl"
+          className="mx-auto mt-8 max-w-3xl font-sans text-lg leading-relaxed text-slate-300 sm:text-xl"
         >
           Consultoria patrimonial exclusiva e sem conflito de interesses.
           Estruturamos a sua transição para viver de renda, blindamos seu

@@ -53,15 +53,15 @@ export function Methodology() {
               transition={{ duration: 0.55, delay: index * 0.08 }}
               className="relative flex gap-6"
             >
-              <span className="relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-blue-700/40 bg-blue-950/40 font-serif text-base font-semibold text-blue-300 backdrop-blur-lg">
+              <span className="relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-blue-700/40 bg-blue-950/40 font-sans text-base font-semibold text-blue-300 backdrop-blur-lg">
                 {String(index + 1).padStart(2, "0")}
               </span>
 
               <div className="flex-1 rounded-2xl border border-white/5 bg-white/[0.02] p-6 backdrop-blur-lg transition duration-300 hover:border-blue-700/30 hover:shadow-[0_0_30px_rgba(29,78,216,0.15)]">
-                <h3 className="font-serif text-xl font-semibold tracking-tight text-white">
+                <h3 className="font-sans text-xl font-semibold tracking-tight text-white">
                   {step.title}
                 </h3>
-                <p className="mt-3 text-base leading-relaxed text-slate-400">
+                <p className="mt-3 font-sans text-base leading-relaxed text-slate-300">
                   {step.text}
                 </p>
               </div>

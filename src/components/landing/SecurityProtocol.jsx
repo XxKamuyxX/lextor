@@ -50,7 +50,7 @@ export function SecurityProtocol() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.6 }}
-          className="text-center font-serif text-2xl font-semibold tracking-tight text-white"
+          className="text-center font-sans text-2xl font-semibold tracking-tight text-white"
         >
           Privacidade e Segurança Institucional
         </motion.h3>
@@ -81,10 +81,10 @@ export function SecurityProtocol() {
               </span>
 
               <div>
-                <p className="font-serif text-base font-semibold tracking-tight text-white">
+                <p className="font-sans text-base font-semibold tracking-tight text-white">
                   {protocol.title}
                 </p>
-                <p className="mt-2 text-sm leading-relaxed text-slate-400">
+                <p className="mt-2 font-sans text-sm leading-relaxed text-slate-300">
                   {protocol.text}
                 </p>
               </div>

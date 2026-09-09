@@ -80,10 +80,10 @@ export function Solutions() {
                 </svg>
               </span>
 
-              <h3 className="mt-6 font-serif text-xl font-semibold tracking-tight text-white">
+              <h3 className="mt-6 font-sans text-xl font-semibold tracking-tight text-white">
                 {solution.title}
               </h3>
-              <p className="mt-4 text-base leading-relaxed text-slate-400">
+              <p className="mt-4 font-sans text-base leading-relaxed text-slate-300">
                 {solution.text}
               </p>
             </motion.article>

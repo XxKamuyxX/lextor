@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 
 const MOMENTO_VIDA = [
@@ -217,7 +216,7 @@ export default function AdminPreferenciasPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-950 text-slate-400">
+      <div className="flex min-h-[50vh] items-center justify-center text-slate-400">
         <div className="flex flex-col items-center gap-3">
           <div
             className="h-8 w-8 animate-spin rounded-full border-2 border-sky-800 border-t-sky-400"
@@ -232,12 +231,7 @@ export default function AdminPreferenciasPage() {
   const nome = cliente?.nome || "Cliente";
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-slate-950 text-slate-100">
-      <div
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(14,116,144,0.14)_0%,_transparent_55%)]"
-        aria-hidden
-      />
-
+    <div className="relative mx-auto max-w-4xl text-slate-100">
       {toast && (
         <div
           role="status"
@@ -251,35 +245,17 @@ export default function AdminPreferenciasPage() {
         </div>
       )}
 
-      <header className="relative z-10 border-b border-sky-950/80 bg-slate-950/90 backdrop-blur">
-        <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-4 px-6 py-4">
-          <div>
-            <p className="text-xs uppercase tracking-widest text-sky-600">
-              Aprofundamento de Objetivos e Teses
-            </p>
-            <h1 className="mt-1 text-xl font-bold text-white sm:text-2xl">
-              {nome}
-            </h1>
-            <p className="mt-1 font-mono text-xs text-slate-500">ID: {id}</p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Link
-              href={`/admin/cliente/${id}`}
-              className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 transition hover:border-sky-700 hover:text-sky-300"
-            >
-              ← Carteira
-            </Link>
-            <Link
-              href="/admin"
-              className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 transition hover:border-sky-700 hover:text-sky-300"
-            >
-              Painel
-            </Link>
-          </div>
-        </div>
+      <header className="mb-8">
+        <p className="text-xs uppercase tracking-widest text-sky-600">
+          Projetos e Teses
+        </p>
+        <h1 className="mt-1 text-2xl font-bold text-white sm:text-3xl">
+          {nome}
+        </h1>
+        <p className="mt-1 font-mono text-xs text-slate-500">ID: {id}</p>
       </header>
 
-      <main className="relative z-10 mx-auto max-w-4xl px-6 py-10">
+      <div>
         <p className="mb-8 text-sm text-slate-400">
           Mapeie objetivos, teses e restrições do cliente. As respostas são
           salvas em JSON na coluna{" "}
@@ -439,7 +415,7 @@ export default function AdminPreferenciasPage() {
             </button>
           </div>
         </form>
-      </main>
+      </div>
     </div>
   );
 }

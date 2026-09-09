@@ -21,7 +21,7 @@ export function LandingHeader() {
             <a
               key={item.href}
               href={item.href}
-              className="text-sm font-medium tracking-wide text-slate-400 transition hover:text-blue-400"
+              className="font-sans text-sm font-medium tracking-wide text-slate-300 transition hover:text-blue-400"
             >
               {item.label}
             </a>

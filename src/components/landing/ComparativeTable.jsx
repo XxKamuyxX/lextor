@@ -65,23 +65,25 @@ export function ComparativeTable() {
             transition={{ duration: 0.6 }}
             className="rounded-2xl border border-white/5 bg-white/[0.015] p-8"
           >
-            <h3 className="font-serif text-xl font-semibold tracking-tight text-slate-400">
+            <h3 className="font-sans text-xl font-semibold tracking-tight text-slate-300">
               O Mercado Tradicional
             </h3>
-            <p className="mt-1 text-sm text-slate-600">Bancos e corretoras</p>
+            <p className="mt-1 font-sans text-sm text-slate-400">
+              Bancos e corretoras
+            </p>
 
             <ul className="mt-8 space-y-6">
               {traditionalMarket.map((item, index) => (
                 <motion.li
                   key={item.title}
                   initial={{ opacity: 0, y: 16 }}
-                  whileInView={{ opacity: 0.65, y: 0 }}
+                  whileInView={{ opacity: 0.75, y: 0 }}
                   viewport={{ once: true, margin: "-60px" }}
                   transition={{ duration: 0.5, delay: index * 0.08 }}
                   className="flex gap-4"
                 >
                   <span
-                    className="mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/5 text-slate-600"
+                    className="mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/5 text-slate-500"
                     aria-hidden
                   >
                     <svg
@@ -98,8 +100,10 @@ export function ComparativeTable() {
                   </span>
 
                   <div>
-                    <p className="font-medium text-slate-400">{item.title}</p>
-                    <p className="mt-1.5 text-sm leading-relaxed text-slate-500">
+                    <p className="font-sans font-medium text-slate-300">
+                      {item.title}
+                    </p>
+                    <p className="mt-1.5 font-sans text-sm leading-relaxed text-slate-300">
                       {item.text}
                     </p>
                   </div>
@@ -115,10 +119,10 @@ export function ComparativeTable() {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="rounded-2xl border border-blue-700/40 bg-blue-950/10 p-8 shadow-[0_0_40px_rgba(29,78,216,0.15)] backdrop-blur-lg"
           >
-            <h3 className="font-serif text-xl font-semibold tracking-tight text-white">
+            <h3 className="font-sans text-xl font-semibold tracking-tight text-white">
               O Padrão LEXTOR
             </h3>
-            <p className="mt-1 text-sm text-blue-400">
+            <p className="mt-1 font-sans text-sm text-blue-400">
               Consultoria sem conflito de interesses
             </p>
 
@@ -150,8 +154,10 @@ export function ComparativeTable() {
                   </span>
 
                   <div>
-                    <p className="font-medium text-white">{item.title}</p>
-                    <p className="mt-1.5 text-sm leading-relaxed text-slate-300">
+                    <p className="font-sans font-medium text-white">
+                      {item.title}
+                    </p>
+                    <p className="mt-1.5 font-sans text-sm leading-relaxed text-slate-300">
                       {item.text}
                     </p>
                   </div>
