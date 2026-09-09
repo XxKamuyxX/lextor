@@ -6,6 +6,10 @@ import {
   summarizeAportes,
   tickerDoAporte,
 } from "@/lib/cliente";
+import {
+  isRendaFixa,
+  valorAtualAporte,
+} from "@/utils/calculosRendaFixa";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -94,7 +98,10 @@ export async function GET(_request: Request, { params }: Params) {
     }
 
     const aportes = await loadAportesDoCliente(supabase, id);
-    const tickers = aportes.map(tickerDoAporte).filter(Boolean);
+    const tickers = aportes
+      .filter((a) => !isRendaFixa(a))
+      .map(tickerDoAporte)
+      .filter(Boolean);
     const precos = await fetchUltimosPrecosAdmin(supabase, tickers);
     const summary = summarizeAportes(aportes, precos);
 
@@ -102,6 +109,19 @@ export async function GET(_request: Request, { params }: Params) {
       const ticker = tickerDoAporte(aporte);
       const qtd = Number(aporte.quantidade ?? 0);
       const precoMedio = Number(aporte.preco_medio ?? aporte.preco ?? 0);
+      const rf = isRendaFixa(aporte);
+
+      if (rf) {
+        const valorAtual = valorAtualAporte(aporte, {});
+        return {
+          ...aporte,
+          ticker_normalizado: ticker || null,
+          preco_atual: valorAtual,
+          valor_atual: valorAtual,
+          marcacao_curva: true,
+        };
+      }
+
       const precoAtual =
         ticker && precos[ticker] != null ? Number(precos[ticker]) : null;
       const precoUsado = precoAtual != null ? precoAtual : precoMedio;
@@ -112,6 +132,7 @@ export async function GET(_request: Request, { params }: Params) {
         ticker_normalizado: ticker || null,
         preco_atual: precoAtual,
         valor_atual: valorAtual,
+        marcacao_curva: false,
       };
     });
 
@@ -191,9 +212,20 @@ export async function POST(request: Request, { params }: Params) {
 
     const tipoAtivo = String(body.tipo_ativo ?? "").trim();
     const ticker = normalizaTicker(body.ticker);
-    const quantidade = Number(body.quantidade);
-    const precoMedio = Number(body.preco_medio);
     const dataAporte = String(body.data ?? body.data_aporte ?? "").trim();
+    const isRF = tipoAtivo === "Renda Fixa";
+
+    const quantidade = isRF
+      ? 1
+      : Number(body.quantidade);
+    const precoMedio = Number(body.preco_medio ?? body.valor_aporte);
+    const indexador = String(body.indexador ?? "").trim();
+    const taxaContratada = Number(
+      String(body.taxa_contratada ?? body.taxa ?? "").replace(",", ".")
+    );
+    const dataVencimento = String(
+      body.data_vencimento ?? body.vencimento ?? ""
+    ).trim();
 
     const tiposValidos = ["Ação", "FII", "Renda Fixa"];
     if (!tiposValidos.includes(tipoAtivo)) {
@@ -208,7 +240,7 @@ export async function POST(request: Request, { params }: Params) {
         { status: 400 }
       );
     }
-    if (!Number.isFinite(quantidade) || quantidade <= 0) {
+    if (!isRF && (!Number.isFinite(quantidade) || quantidade <= 0)) {
       return NextResponse.json(
         { message: "Quantidade deve ser um número maior que zero." },
         { status: 400 }
@@ -216,7 +248,11 @@ export async function POST(request: Request, { params }: Params) {
     }
     if (!Number.isFinite(precoMedio) || precoMedio < 0) {
       return NextResponse.json(
-        { message: "Preço médio inválido." },
+        {
+          message: isRF
+            ? "Informe o valor do aporte."
+            : "Preço médio inválido.",
+        },
         { status: 400 }
       );
     }
@@ -227,7 +263,32 @@ export async function POST(request: Request, { params }: Params) {
       );
     }
 
-    const valorAportado = quantidade * precoMedio;
+    const indexadoresValidos = ["Pré-fixado", "CDI", "IPCA+"];
+    if (isRF) {
+      if (!indexadoresValidos.includes(indexador)) {
+        return NextResponse.json(
+          {
+            message:
+              "Indexador inválido. Use Pré-fixado, CDI ou IPCA+.",
+          },
+          { status: 400 }
+        );
+      }
+      if (!Number.isFinite(taxaContratada)) {
+        return NextResponse.json(
+          { message: "Informe a taxa contratada anual (%)." },
+          { status: 400 }
+        );
+      }
+      if (!dataVencimento) {
+        return NextResponse.json(
+          { message: "Informe a data de vencimento." },
+          { status: 400 }
+        );
+      }
+    }
+
+    const valorAportado = isRF ? precoMedio : quantidade * precoMedio;
 
     const baseRow: Record<string, unknown> = {
       cliente_id: clienteId,
@@ -240,6 +301,12 @@ export async function POST(request: Request, { params }: Params) {
       valor_aportado: valorAportado,
       data_aporte: dataAporte,
     };
+
+    if (isRF) {
+      baseRow.indexador = indexador;
+      baseRow.taxa_contratada = taxaContratada;
+      baseRow.data_vencimento = dataVencimento;
+    }
 
     const data = await insertAporteCompativel(supabase, baseRow);
 

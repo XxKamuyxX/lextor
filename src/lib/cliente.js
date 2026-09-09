@@ -144,6 +144,11 @@ export function displayName(cliente, user) {
   );
 }
 
+import {
+  isRendaFixa,
+  valorAtualAporte,
+} from "@/utils/calculosRendaFixa";
+
 /**
  * @param {Array} aportes
  * @param {Record<string, number>} [precosAtuais] mapa ticker → preço atual (cotacoes_historicas)
@@ -155,25 +160,20 @@ export function summarizeAportes(aportes, precosAtuais = {}) {
   for (const a of aportes) {
     const qtd = Number(a.quantidade ?? 0);
     const precoMedio = Number(a.preco_medio ?? a.preco ?? 0);
-    const ticker = tickerDoAporte(a);
-    const cotacao = ticker ? precosAtuais[ticker] : undefined;
-    const precoAtual =
-      cotacao != null && !Number.isNaN(Number(cotacao))
-        ? Number(cotacao)
-        : precoMedio;
 
     const valor =
       a.valor_aportado != null
         ? Number(a.valor_aportado)
         : a.valor != null
           ? Number(a.valor)
-          : qtd * precoMedio;
+          : isRendaFixa(a)
+            ? precoMedio
+            : qtd * precoMedio;
 
     totalAportado += valor;
-    patrimonio += qtd * precoAtual || valor;
+    patrimonio += valorAtualAporte(a, precosAtuais) || valor;
   }
 
-  // Rentabilidade: diferença patrimonial (preço atual vs. preço médio / aportado)
   const rentabilidade =
     totalAportado > 0 ? ((patrimonio - totalAportado) / totalAportado) * 100 : 0;
 

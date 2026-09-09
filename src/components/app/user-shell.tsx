@@ -1,6 +1,6 @@
 "use client";
 
-import { UserNav } from "@/components/app/user-nav";
+import { ClientSidebar } from "@/components/layout/ClientSidebar";
 
 type UserShellProps = {
   children: React.ReactNode;
@@ -9,13 +9,9 @@ type UserShellProps = {
 
 export function UserShell({ children, email }: UserShellProps) {
   return (
-    <div className="relative min-h-screen overflow-hidden bg-slate-950 text-slate-100">
-      <div
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(14,116,144,0.16)_0%,_transparent_55%)]"
-        aria-hidden
-      />
-      <UserNav email={email} />
-      <main className="relative z-10 mx-auto max-w-6xl px-6 py-10">{children}</main>
+    <div className="min-h-screen bg-[#0a0a0a] text-slate-100">
+      <ClientSidebar email={email} />
+      <main className="ml-64 min-h-screen bg-[#0a0a0a] p-8">{children}</main>
     </div>
   );
 }

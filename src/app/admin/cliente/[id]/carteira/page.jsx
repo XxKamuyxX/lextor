@@ -5,11 +5,16 @@ import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { formatBRL, tickerDoAporte } from "@/lib/cliente";
 import {
+  calcularMarcacaoNaCurva,
+  isRendaFixa,
+} from "@/utils/calculosRendaFixa";
+import {
   staggerContainer,
   staggerItem,
 } from "@/components/dashboard/motion-variants";
 
 const TIPOS_ATIVO = ["Ação", "FII", "Renda Fixa"];
+const INDEXADORES = ["Pré-fixado", "CDI", "IPCA+"];
 
 const emptyForm = () => ({
   tipo_ativo: "Ação",
@@ -17,6 +22,9 @@ const emptyForm = () => ({
   quantidade: "",
   preco_medio: "",
   data: new Date().toISOString().slice(0, 10),
+  indexador: "Pré-fixado",
+  taxa_contratada: "",
+  data_vencimento: "",
 });
 
 function formatData(value) {
@@ -29,6 +37,14 @@ function formatData(value) {
     month: "2-digit",
     year: "numeric",
   });
+}
+
+function formatTaxaLabel(aporte) {
+  const taxa = aporte.taxa_contratada ?? aporte.taxa;
+  if (taxa == null || taxa === "") return null;
+  const n = Number(taxa);
+  if (Number.isNaN(n)) return String(taxa);
+  return `${n.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}% a.a.`;
 }
 
 export default function AdminClienteCarteiraPage() {
@@ -48,6 +64,8 @@ export default function AdminClienteCarteiraPage() {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState(null);
+
+  const isRFForm = form.tipo_ativo === "Renda Fixa";
 
   const loadCarteira = useCallback(async () => {
     if (!id) return;
@@ -129,17 +147,28 @@ export default function AdminClienteCarteiraPage() {
     setMessage(null);
 
     try {
+      const payload = {
+        tipo_ativo: form.tipo_ativo,
+        ticker: form.ticker,
+        preco_medio: Number(String(form.preco_medio).replace(",", ".")),
+        data: form.data,
+      };
+
+      if (form.tipo_ativo === "Renda Fixa") {
+        payload.indexador = form.indexador;
+        payload.taxa_contratada = Number(
+          String(form.taxa_contratada).replace(",", ".")
+        );
+        payload.data_vencimento = form.data_vencimento;
+      } else {
+        payload.quantidade = Number(String(form.quantidade).replace(",", "."));
+      }
+
       const res = await fetch(`/api/admin/clientes/${id}/aportes`, {
         method: "POST",
         credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          tipo_ativo: form.tipo_ativo,
-          ticker: form.ticker,
-          quantidade: Number(String(form.quantidade).replace(",", ".")),
-          preco_medio: Number(String(form.preco_medio).replace(",", ".")),
-          data: form.data,
-        }),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
 
@@ -184,7 +213,7 @@ export default function AdminClienteCarteiraPage() {
         <div>
           <h1 className="text-2xl font-bold text-white">Carteira</h1>
           <p className="mt-1 text-sm text-slate-400">
-            Aportes de {nome} cruzados com cotacoes_historicas
+            Aportes de {nome} — ações/FIIs por cotação, RF por marcação na curva
           </p>
         </div>
         <button
@@ -220,10 +249,12 @@ export default function AdminClienteCarteiraPage() {
               <thead className="bg-slate-950/70 text-xs uppercase tracking-wide text-slate-500">
                 <tr>
                   <th className="px-6 py-3.5 font-medium">Tipo</th>
-                  <th className="px-6 py-3.5 font-medium">Ticker</th>
+                  <th className="px-6 py-3.5 font-medium">Ticker / Nome</th>
                   <th className="px-6 py-3.5 font-medium">Quantidade</th>
                   <th className="px-6 py-3.5 font-medium">Preço médio</th>
-                  <th className="px-6 py-3.5 font-medium">Preço atual</th>
+                  <th className="px-6 py-3.5 font-medium">
+                    Preço / Saldo atual
+                  </th>
                   <th className="px-6 py-3.5 font-medium">Valor atual</th>
                   <th className="px-6 py-3.5 font-medium">Data</th>
                 </tr>
@@ -250,24 +281,47 @@ export default function AdminClienteCarteiraPage() {
                   </tr>
                 ) : (
                   aportes.map((aporte) => {
+                    const rf = isRendaFixa(aporte);
                     const ticker =
                       aporte.ticker_normalizado || tickerDoAporte(aporte);
                     const precoMedio = Number(
                       aporte.preco_medio ?? aporte.preco ?? 0
                     );
-                    const precoAtual =
-                      aporte.preco_atual != null
-                        ? Number(aporte.preco_atual)
-                        : ticker && precos[ticker] != null
-                          ? Number(precos[ticker])
-                          : null;
-                    const valorAtual =
-                      aporte.valor_atual != null
-                        ? Number(aporte.valor_atual)
-                        : Number(aporte.quantidade ?? 0) *
-                          (precoAtual != null ? precoAtual : precoMedio);
+                    const valorAportado =
+                      aporte.valor_aportado != null
+                        ? Number(aporte.valor_aportado)
+                        : precoMedio;
+
+                    let precoOuSaldo = null;
+                    let valorAtual = null;
+
+                    if (rf) {
+                      const saldo = calcularMarcacaoNaCurva(
+                        valorAportado,
+                        aporte.data_aporte || aporte.data || aporte.created_at,
+                        aporte.taxa_contratada ?? aporte.taxa
+                      );
+                      precoOuSaldo = saldo;
+                      valorAtual = saldo;
+                    } else {
+                      const precoAtual =
+                        aporte.preco_atual != null
+                          ? Number(aporte.preco_atual)
+                          : ticker && precos[ticker] != null
+                            ? Number(precos[ticker])
+                            : null;
+                      precoOuSaldo = precoAtual;
+                      valorAtual =
+                        aporte.valor_atual != null
+                          ? Number(aporte.valor_atual)
+                          : Number(aporte.quantidade ?? 0) *
+                            (precoAtual != null ? precoAtual : precoMedio);
+                    }
+
                     const dataExibir =
                       aporte.data_aporte || aporte.data || aporte.created_at;
+                    const taxaLabel = formatTaxaLabel(aporte);
+                    const vencimento = formatData(aporte.data_vencimento);
 
                     return (
                       <tr
@@ -279,20 +333,37 @@ export default function AdminClienteCarteiraPage() {
                         </td>
                         <td className="px-6 py-4 font-medium text-white">
                           {ticker || aporte.ticker || aporte.ativo || "—"}
+                          {rf ? (
+                            <span className="mt-0.5 block text-xs font-normal text-slate-500">
+                              {[
+                                aporte.indexador,
+                                taxaLabel,
+                                vencimento !== "—"
+                                  ? `Venc. ${vencimento}`
+                                  : null,
+                              ]
+                                .filter(Boolean)
+                                .join(" · ")}
+                            </span>
+                          ) : null}
                         </td>
                         <td className="px-6 py-4 tabular-nums text-slate-300">
-                          {Number(aporte.quantidade ?? 0).toLocaleString(
-                            "pt-BR"
-                          )}
+                          {rf
+                            ? "—"
+                            : Number(aporte.quantidade ?? 0).toLocaleString(
+                                "pt-BR"
+                              )}
                         </td>
                         <td className="px-6 py-4 tabular-nums text-slate-300">
-                          {formatBRL(precoMedio)}
+                          {formatBRL(rf ? valorAportado : precoMedio)}
                         </td>
                         <td className="px-6 py-4 tabular-nums text-sky-300">
-                          {precoAtual != null ? formatBRL(precoAtual) : "—"}
+                          {precoOuSaldo != null
+                            ? formatBRL(precoOuSaldo)
+                            : "—"}
                         </td>
                         <td className="px-6 py-4 tabular-nums font-medium text-white">
-                          {formatBRL(valorAtual)}
+                          {valorAtual != null ? formatBRL(valorAtual) : "—"}
                         </td>
                         <td className="px-6 py-4 tabular-nums text-slate-400">
                           {formatData(dataExibir)}
@@ -382,61 +453,160 @@ export default function AdminClienteCarteiraPage() {
                     setForm((f) => ({ ...f, ticker: e.target.value }))
                   }
                   className="mt-1.5 w-full rounded-lg border border-slate-700 bg-slate-950/60 px-3 py-2.5 text-sm uppercase text-white outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/25"
-                  placeholder="PETR4, MXRF11, Tesouro..."
+                  placeholder={
+                    isRFForm ? "CDB BANCO X, TESOURO..." : "PETR4, MXRF11..."
+                  }
                 />
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label
-                    htmlFor="quantidade"
-                    className="block text-xs font-medium text-slate-400"
-                  >
-                    Quantidade
-                  </label>
-                  <input
-                    id="quantidade"
-                    type="number"
-                    required
-                    min="0"
-                    step="any"
-                    value={form.quantidade}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, quantidade: e.target.value }))
-                    }
-                    className="mt-1.5 w-full rounded-lg border border-slate-700 bg-slate-950/60 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/25"
-                    placeholder="100"
-                  />
+              {isRFForm ? (
+                <>
+                  <div>
+                    <label
+                      htmlFor="indexador"
+                      className="block text-xs font-medium text-slate-400"
+                    >
+                      Indexador
+                    </label>
+                    <select
+                      id="indexador"
+                      required
+                      value={form.indexador}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, indexador: e.target.value }))
+                      }
+                      className="mt-1.5 w-full rounded-lg border border-slate-700 bg-slate-950/60 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/25"
+                    >
+                      {INDEXADORES.map((item) => (
+                        <option key={item} value={item}>
+                          {item}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <label
+                        htmlFor="taxa_contratada"
+                        className="block text-xs font-medium text-slate-400"
+                      >
+                        Taxa Contratada Anual (%)
+                      </label>
+                      <input
+                        id="taxa_contratada"
+                        type="number"
+                        required
+                        step="any"
+                        value={form.taxa_contratada}
+                        onChange={(e) =>
+                          setForm((f) => ({
+                            ...f,
+                            taxa_contratada: e.target.value,
+                          }))
+                        }
+                        className="mt-1.5 w-full rounded-lg border border-slate-700 bg-slate-950/60 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/25"
+                        placeholder="10.5"
+                      />
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="data_vencimento"
+                        className="block text-xs font-medium text-slate-400"
+                      >
+                        Data de Vencimento
+                      </label>
+                      <input
+                        id="data_vencimento"
+                        type="date"
+                        required
+                        value={form.data_vencimento}
+                        onChange={(e) =>
+                          setForm((f) => ({
+                            ...f,
+                            data_vencimento: e.target.value,
+                          }))
+                        }
+                        className="mt-1.5 w-full rounded-lg border border-slate-700 bg-slate-950/60 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/25"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="preco_medio"
+                      className="block text-xs font-medium text-slate-400"
+                    >
+                      Valor do Aporte (R$)
+                    </label>
+                    <input
+                      id="preco_medio"
+                      type="number"
+                      required
+                      min="0"
+                      step="any"
+                      value={form.preco_medio}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, preco_medio: e.target.value }))
+                      }
+                      className="mt-1.5 w-full rounded-lg border border-slate-700 bg-slate-950/60 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/25"
+                      placeholder="10000.00"
+                    />
+                  </div>
+                </>
+              ) : (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label
+                      htmlFor="quantidade"
+                      className="block text-xs font-medium text-slate-400"
+                    >
+                      Quantidade
+                    </label>
+                    <input
+                      id="quantidade"
+                      type="number"
+                      required
+                      min="0"
+                      step="any"
+                      value={form.quantidade}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, quantidade: e.target.value }))
+                      }
+                      className="mt-1.5 w-full rounded-lg border border-slate-700 bg-slate-950/60 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/25"
+                      placeholder="100"
+                    />
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="preco_medio"
+                      className="block text-xs font-medium text-slate-400"
+                    >
+                      Preço Médio
+                    </label>
+                    <input
+                      id="preco_medio"
+                      type="number"
+                      required
+                      min="0"
+                      step="any"
+                      value={form.preco_medio}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, preco_medio: e.target.value }))
+                      }
+                      className="mt-1.5 w-full rounded-lg border border-slate-700 bg-slate-950/60 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/25"
+                      placeholder="28.50"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label
-                    htmlFor="preco_medio"
-                    className="block text-xs font-medium text-slate-400"
-                  >
-                    Preço Médio
-                  </label>
-                  <input
-                    id="preco_medio"
-                    type="number"
-                    required
-                    min="0"
-                    step="any"
-                    value={form.preco_medio}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, preco_medio: e.target.value }))
-                    }
-                    className="mt-1.5 w-full rounded-lg border border-slate-700 bg-slate-950/60 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/25"
-                    placeholder="28.50"
-                  />
-                </div>
-              </div>
+              )}
 
               <div>
                 <label
                   htmlFor="data"
                   className="block text-xs font-medium text-slate-400"
                 >
-                  Data
+                  Data do Aporte
                 </label>
                 <input
                   id="data"

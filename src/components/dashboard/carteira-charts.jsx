@@ -16,6 +16,7 @@ import {
 import { ChartTooltip } from "@/components/dashboard/chart-tooltip";
 import { staggerItem } from "@/components/dashboard/motion-variants";
 import { formatBRL, tickerDoAporte } from "@/lib/cliente";
+import { isRendaFixa, valorAtualAporte } from "@/utils/calculosRendaFixa";
 
 const COLORS = [
   "#38bdf8",
@@ -38,20 +39,15 @@ export function CarteiraCharts({ aportes = [], precos = {} }) {
 
     for (const a of aportes) {
       const ticker = tickerDoAporte(a) || a.ticker || a.ativo || "Outros";
-      const qtd = Number(a.quantidade ?? 0);
-      const precoMedio = Number(a.preco_medio ?? a.preco ?? 0);
-      const precoAtual =
-        a.preco_atual != null
-          ? Number(a.preco_atual)
-          : ticker && precos[ticker] != null
-            ? Number(precos[ticker])
-            : precoMedio;
-      const valor =
-        a.valor_atual != null ? Number(a.valor_atual) : qtd * precoAtual;
+      const valor = valorAtualAporte(a, precos);
 
       if (valor <= 0) continue;
 
-      alocMap.set(ticker, (alocMap.get(ticker) || 0) + valor);
+      const label = isRendaFixa(a)
+        ? `${ticker}${a.indexador ? ` (${a.indexador})` : ""}`
+        : ticker;
+
+      alocMap.set(label, (alocMap.get(label) || 0) + valor);
 
       const tipo = a.tipo_ativo || a.tipo || "Outros";
       tipoMap.set(tipo, (tipoMap.get(tipo) || 0) + valor);
