@@ -1,16 +1,22 @@
 -- Leads de agendamento da landing / login
 -- Execute no SQL Editor do Supabase
+--
+-- Colunas reais da tabela: nome, email, telefone, patrimonio
 
 create extension if not exists "pgcrypto";
 
 create table if not exists public.leads_contato (
   id uuid primary key default gen_random_uuid(),
-  nome_completo text not null,
+  nome text not null,
   email text not null,
   telefone text not null,
-  patrimonio_disponivel text not null,
+  patrimonio text not null,
   created_at timestamptz not null default now()
 );
+
+-- Se a tabela já existir com outros nomes, alinhe com:
+-- alter table public.leads_contato rename column nome_completo to nome;
+-- alter table public.leads_contato rename column patrimonio_disponivel to patrimonio;
 
 create index if not exists leads_contato_created_at_idx
   on public.leads_contato (created_at desc);

@@ -121,13 +121,14 @@ export function AgendarModal({ open, onClose, onSuccess }) {
       const { error: insertError } = await supabase
         .from("leads_contato")
         .insert({
-          nome_completo: nome,
+          nome,
           email,
           telefone,
-          patrimonio_disponivel: patrimonio,
+          patrimonio,
         });
 
       if (insertError) {
+        console.error("leads_contato insert:", insertError);
         setError(
           "Não foi possível enviar sua solicitação. Tente novamente em instantes."
         );
