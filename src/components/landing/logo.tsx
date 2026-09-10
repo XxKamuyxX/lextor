@@ -8,9 +8,9 @@ type LogoProps = {
 };
 
 const sizes = {
-  sm: { width: 120, height: 48, className: "h-10 w-auto" },
-  md: { width: 160, height: 64, className: "h-14 w-auto" },
-  lg: { width: 220, height: 88, className: "h-20 w-auto sm:h-24" },
+  sm: { width: 160, height: 64, className: "h-11 w-auto sm:h-12" },
+  md: { width: 220, height: 88, className: "h-16 w-auto" },
+  lg: { width: 360, height: 144, className: "h-24 w-auto sm:h-28 lg:h-32" },
 };
 
 export function Logo({ href = "/", size = "md", showLink = true }: LogoProps) {
@@ -18,7 +18,7 @@ export function Logo({ href = "/", size = "md", showLink = true }: LogoProps) {
 
   const img = (
     <Image
-      src="/brand/logo-etr.png"
+      src="/brand/logo-lextor-white.png"
       alt="LEXTOR — Consultoria Patrimonial"
       width={width}
       height={height}

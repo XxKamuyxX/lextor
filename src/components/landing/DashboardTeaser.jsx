@@ -54,7 +54,7 @@ export function DashboardTeaser() {
   return (
     <section
       id="tecnologia"
-      className="border-t border-white/5 bg-black px-6 py-24 sm:py-28"
+      className="overflow-hidden border-t border-white/5 bg-black px-4 py-24 sm:px-6 sm:py-28"
     >
       <div className="mx-auto grid max-w-6xl items-center gap-16 lg:grid-cols-2">
         <motion.div
@@ -70,7 +70,7 @@ export function DashboardTeaser() {
             O controle absoluto do seu patrimônio na palma da mão
           </h2>
           <p className="mt-6 max-w-xl font-sans text-lg leading-relaxed text-slate-300">
-            Cada cliente LEXTOR recebe acesso vitalício a um dashboard
+            Enquanto você for cliente LEXTOR, tem acesso a um dashboard
             exclusivo, com transparência integral sobre alocação, rentabilidade
             e evolução da sua renda passiva.
           </p>
@@ -92,11 +92,11 @@ export function DashboardTeaser() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.7, delay: 0.12 }}
-          className="relative"
+          className="relative overflow-hidden"
           aria-hidden
         >
           <div
-            className="pointer-events-none absolute -inset-8 bg-[radial-gradient(ellipse_at_center,_rgba(29,78,216,0.18)_0%,_transparent_70%)]"
+            className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(29,78,216,0.18)_0%,_transparent_70%)]"
           />
 
           <div className="relative overflow-hidden rounded-xl border border-slate-800 bg-[#0B1120] p-4 shadow-2xl shadow-blue-900/20 sm:p-5">

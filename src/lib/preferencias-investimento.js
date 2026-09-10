@@ -6,7 +6,6 @@ export const MOMENTO_VIDA = [
   "Acumulação agressiva de patrimônio",
   "Transição para viver de renda (Aposentadoria)",
   "Preservação de capital contra inflação",
-  "Sucessão patrimonial / Herança",
   "Compra de imóvel ou bens de alto valor",
   "Custear educação dos filhos",
   "Reserva para ano sabático / Empreendedorismo",

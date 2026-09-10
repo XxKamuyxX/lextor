@@ -44,7 +44,7 @@ export function ComparativeTable() {
   return (
     <section
       id="comparativo"
-      className="border-t border-white/5 bg-[#0a0a0a] px-6 py-24 sm:py-28"
+      className="overflow-hidden border-t border-white/5 bg-[#0a0a0a] px-4 py-24 sm:px-6 sm:py-28"
     >
       <div className="mx-auto max-w-6xl">
         <motion.h2
@@ -59,11 +59,11 @@ export function ComparativeTable() {
 
         <div className="mt-16 grid gap-6 lg:grid-cols-2">
           <motion.div
-            initial={{ opacity: 0, x: -28 }}
-            whileInView={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-80px" }}
             transition={{ duration: 0.6 }}
-            className="rounded-2xl border border-white/5 bg-white/[0.015] p-8"
+            className="rounded-2xl border border-white/5 bg-white/[0.015] p-6 sm:p-8"
           >
             <h3 className="font-sans text-xl font-semibold tracking-tight text-slate-300">
               O Mercado Tradicional
@@ -113,11 +113,11 @@ export function ComparativeTable() {
           </motion.div>
 
           <motion.div
-            initial={{ opacity: 0, x: 28 }}
-            whileInView={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-80px" }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="rounded-2xl border border-blue-700/40 bg-blue-950/10 p-8 shadow-[0_0_40px_rgba(29,78,216,0.15)] backdrop-blur-lg"
+            className="rounded-2xl border border-blue-700/40 bg-blue-950/10 p-6 shadow-[0_0_40px_rgba(29,78,216,0.15)] backdrop-blur-lg sm:p-8"
           >
             <h3 className="font-sans text-xl font-semibold tracking-tight text-white">
               O Padrão LEXTOR

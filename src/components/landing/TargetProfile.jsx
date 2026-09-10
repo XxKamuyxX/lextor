@@ -21,7 +21,7 @@ export function TargetProfile() {
   return (
     <section
       id="para-quem"
-      data-deploy="2026-09-10-perfil-10k"
+      data-deploy="2026-09-10-logo-white-pwa"
       className="border-t border-white/5 bg-black px-6 py-24 sm:py-28"
     >
       <div className="mx-auto max-w-6xl">

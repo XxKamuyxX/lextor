@@ -1,13 +1,14 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Image from "next/image";
 import { useAgendar } from "@/components/landing/AgendarModal";
 
 export function HeroSection() {
   const { openAgendar } = useAgendar();
 
   return (
-    <section className="relative overflow-hidden bg-black px-4 pb-24 pt-20 sm:px-6 sm:pb-32 sm:pt-28">
+    <section className="relative overflow-hidden bg-black px-4 pb-24 pt-16 sm:px-6 sm:pb-32 sm:pt-24">
       <div
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(29,78,216,0.22)_0%,_transparent_55%)]"
         aria-hidden
@@ -18,20 +19,27 @@ export function HeroSection() {
       />
 
       <div className="relative mx-auto max-w-5xl text-center">
-        <motion.p
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="font-sans text-xs font-semibold uppercase tracking-[0.35em] text-blue-500"
+          className="flex justify-center"
         >
-          LEXTOR
-        </motion.p>
+          <Image
+            src="/brand/logo-lextor-white.png"
+            alt="LEXTOR"
+            width={420}
+            height={168}
+            priority
+            className="h-20 w-auto sm:h-28 lg:h-32"
+          />
+        </motion.div>
 
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.08 }}
-          className="mt-6 font-serif text-4xl font-bold leading-[1.12] tracking-tight text-white sm:text-5xl lg:text-6xl"
+          className="mt-8 font-serif text-4xl font-bold leading-[1.12] tracking-tight text-white sm:text-5xl lg:text-6xl"
         >
           O seu trabalho constrói a sua riqueza.{" "}
           <span className="text-blue-400">

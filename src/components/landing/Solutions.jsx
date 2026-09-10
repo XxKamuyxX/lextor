@@ -25,14 +25,12 @@ const solutions = [
     ),
   },
   {
-    title: "Planejamento Sucessório",
-    text: "Transição inteligente e estruturação patrimonial para proteger as próximas gerações da sua família.",
+    title: "Renda Passiva e Liberdade Financeira",
+    text: "Estruturamos a transição do seu patrimônio para gerar renda recorrente, com disciplina e foco no longo prazo.",
     icon: (
       <>
-        <path d="M12 4v8" />
-        <path d="M6 20v-3a6 6 0 0 1 12 0v3" />
-        <circle cx="12" cy="19.5" r="0.5" />
-        <path d="M8.5 7.5 12 4l3.5 3.5" />
+        <path d="M12 3v18" />
+        <path d="M7 8h7a3 3 0 0 1 0 6H9a3 3 0 0 0 0 6h8" />
       </>
     ),
   },

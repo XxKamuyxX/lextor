@@ -17,7 +17,7 @@ const steps = [
   },
   {
     title: "Acompanhamento Premium e Tecnologia",
-    text: "Entregamos relatórios contínuos e realizamos reuniões de revisão a cada 3 meses. Você recebe acesso vitalício a um Dashboard Exclusivo da LEXTOR para acompanhar seus rendimentos, evolução da renda passiva e benchmarks em tempo real, com total transparência.",
+    text: "Entregamos relatórios contínuos e realizamos reuniões de revisão a cada 3 meses. Enquanto você for nosso cliente, tem acesso a um Dashboard Exclusivo da LEXTOR para acompanhar seus rendimentos, evolução da renda passiva e benchmarks em tempo real, com total transparência.",
   },
 ];
 
@@ -25,7 +25,7 @@ export function Methodology() {
   return (
     <section
       id="metodologia"
-      className="border-t border-white/5 bg-[#0a0a0a] px-6 py-24 sm:py-28"
+      className="overflow-hidden border-t border-white/5 bg-[#0a0a0a] px-4 py-24 sm:px-6 sm:py-28"
     >
       <div className="mx-auto max-w-4xl">
         <motion.h2
@@ -38,9 +38,9 @@ export function Methodology() {
           O caminho estruturado para a sua liberdade financeira
         </motion.h2>
 
-        <ol className="relative mt-16 space-y-10 pl-4">
+        <ol className="relative mt-16 space-y-10 pl-1 sm:pl-4">
           <span
-            className="absolute bottom-4 left-[27px] top-4 w-px bg-gradient-to-b from-blue-700/40 via-white/10 to-transparent"
+            className="absolute bottom-4 left-[19px] top-4 w-px bg-gradient-to-b from-blue-700/40 via-white/10 to-transparent sm:left-[27px]"
             aria-hidden
           />
 
@@ -51,13 +51,13 @@ export function Methodology() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-80px" }}
               transition={{ duration: 0.55, delay: index * 0.08 }}
-              className="relative flex gap-6"
+              className="relative flex gap-3 sm:gap-6"
             >
-              <span className="relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-blue-700/40 bg-blue-950/40 font-sans text-base font-semibold text-blue-300 backdrop-blur-lg">
+              <span className="relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-blue-700/40 bg-blue-950/40 font-sans text-sm font-semibold text-blue-300 backdrop-blur-lg sm:h-12 sm:w-12 sm:text-base">
                 {String(index + 1).padStart(2, "0")}
               </span>
 
-              <div className="flex-1 rounded-2xl border border-white/5 bg-white/[0.02] p-6 backdrop-blur-lg transition duration-300 hover:border-blue-700/30 hover:shadow-[0_0_30px_rgba(29,78,216,0.15)]">
+              <div className="min-w-0 flex-1 rounded-2xl border border-white/5 bg-white/[0.02] p-4 backdrop-blur-lg transition duration-300 hover:border-blue-700/30 hover:shadow-[0_0_30px_rgba(29,78,216,0.15)] sm:p-6">
                 <h3 className="font-sans text-xl font-semibold tracking-tight text-white">
                   {step.title}
                 </h3>
