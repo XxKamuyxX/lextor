@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Logo } from "@/components/landing/logo";
 import { useAgendar } from "@/components/landing/AgendarModal";
+import { InstallPwaButton } from "@/components/landing/InstallPwaButton";
 
 const nav = [
   { href: "#filosofia", label: "Filosofia" },
@@ -34,6 +35,10 @@ export function LandingHeader() {
         </nav>
 
         <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+          <InstallPwaButton
+            label="Baixar App"
+            className="hidden rounded-full border border-white/15 px-3 py-2 text-xs font-medium text-slate-300 transition hover:border-blue-400/40 hover:bg-white/5 hover:text-white sm:inline-flex sm:px-4"
+          />
           <Link
             href="/login"
             className="inline-flex rounded-full border border-blue-500/30 px-3 py-2 text-xs font-medium text-blue-300 transition hover:border-blue-400/50 hover:bg-blue-500/10 sm:px-5 sm:py-2.5 sm:text-sm"

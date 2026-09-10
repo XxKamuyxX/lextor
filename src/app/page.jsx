@@ -13,9 +13,10 @@ import { SecurityProtocol } from "@/components/landing/SecurityProtocol";
 import { AuthCodeRedirect } from "@/components/auth-code-redirect";
 import { AgendarProvider } from "@/components/landing/AgendarModal";
 
-// Evita HTML estático desatualizado após deploy (causava CSS 404 na Hostinger).
+// Evita HTML estático / CDN desatualizado após deploy (Hostinger).
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+export const fetchCache = "force-no-store";
 
 export default function HomePage() {
   return (

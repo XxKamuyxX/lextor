@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { Logo } from "@/components/landing/logo";
+import { InstallPwaButton } from "@/components/landing/InstallPwaButton";
 
 export function LandingFooter() {
   return (
-    <footer id="contato" className="border-t border-white/5 bg-black px-6 py-16">
+    <footer id="contato" className="overflow-hidden border-t border-white/5 bg-black px-4 py-16 sm:px-6">
       <div className="mx-auto max-w-7xl">
         <div className="flex flex-col gap-12 lg:flex-row lg:items-start lg:justify-between">
-          <div>
+          <div className="min-w-0">
             <Logo size="sm" showLink={false} />
             <p className="mt-4 max-w-sm font-sans text-sm leading-relaxed text-slate-300">
               LEXTOR — consultoria patrimonial exclusiva, sem conflito de
@@ -15,7 +16,7 @@ export function LandingFooter() {
             </p>
           </div>
 
-          <div className="grid gap-10 sm:grid-cols-3">
+          <div className="grid min-w-0 gap-10 sm:grid-cols-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">
                 Navegação
@@ -63,6 +64,9 @@ export function LandingFooter() {
                     Login
                   </Link>
                 </li>
+                <li>
+                  <InstallPwaButton className="text-left text-sm text-slate-300 transition hover:text-blue-400" />
+                </li>
               </ul>
             </div>
             <div>
@@ -73,7 +77,7 @@ export function LandingFooter() {
                 <li>
                   <a
                     href="mailto:contato@alexjdantas.com"
-                    className="transition hover:text-blue-400"
+                    className="break-all transition hover:text-blue-400"
                   >
                     contato@alexjdantas.com
                   </a>

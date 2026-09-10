@@ -21,15 +21,25 @@ export function TargetProfile() {
   return (
     <section
       id="para-quem"
+      data-deploy="2026-09-10-perfil-10k"
       className="border-t border-white/5 bg-black px-6 py-24 sm:py-28"
     >
       <div className="mx-auto max-w-6xl">
+        <motion.p
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.5 }}
+          className="text-center font-sans text-xs font-semibold uppercase tracking-[0.35em] text-blue-500"
+        >
+          Para quem é
+        </motion.p>
         <motion.h2
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.6 }}
-          className="text-center font-serif text-3xl font-bold tracking-tight text-white sm:text-4xl"
+          transition={{ duration: 0.6, delay: 0.05 }}
+          className="mt-4 text-center font-serif text-3xl font-bold tracking-tight text-white sm:text-4xl"
         >
           Exclusividade e Alinhamento Real de Interesses
         </motion.h2>

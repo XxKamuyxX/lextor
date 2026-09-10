@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { MENSAGEM_ACESSO_NEGADO, normalizeEmail } from "@/lib/acesso";
 import { AgendarModal } from "@/components/landing/AgendarModal";
+import { InstallPwaButton } from "@/components/landing/InstallPwaButton";
 
 function mapSignInError(signInError) {
   const msg = signInError?.message?.toLowerCase() ?? "";
@@ -219,6 +220,9 @@ export default function LoginForm() {
           >
             Agendar conversa com especialista
           </button>
+          <div className="mt-3">
+            <InstallPwaButton className="text-xs font-medium text-slate-500 transition hover:text-sky-400" />
+          </div>
         </div>
 
         {successMessage && (
