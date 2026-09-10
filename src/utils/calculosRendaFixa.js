@@ -40,9 +40,9 @@ export function isRendaFixa(aporte) {
   const tipo = String(aporte?.tipo_ativo || aporte?.tipo || "").toLowerCase();
   return (
     tipo.includes("renda fixa") ||
+    tipo.includes("tesouro") ||
     tipo === "rf" ||
     tipo.includes("cdb") ||
-    tipo.includes("tesouro") ||
     tipo.includes("lci") ||
     tipo.includes("lca")
   );

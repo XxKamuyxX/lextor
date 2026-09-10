@@ -12,12 +12,20 @@ import {
   staggerContainer,
   staggerItem,
 } from "@/components/dashboard/motion-variants";
+import { CarteiraCharts } from "@/components/dashboard/carteira-charts";
+import {
+  TIPOS_ATIVO,
+  indexadorDoSegmento,
+  segmentoDoAporte,
+  segmentoPadrao,
+  segmentosDoTipo,
+} from "@/lib/segmentos-carteira";
 
-const TIPOS_ATIVO = ["Ação", "FII", "Renda Fixa"];
 const INDEXADORES = ["Pré-fixado", "CDI", "IPCA+"];
 
 const emptyForm = () => ({
   tipo_ativo: "Ação",
+  segmento: segmentoPadrao("Ação"),
   ticker: "",
   quantidade: "",
   preco_medio: "",
@@ -25,6 +33,7 @@ const emptyForm = () => ({
   indexador: "Pré-fixado",
   taxa_contratada: "",
   data_vencimento: "",
+  moeda: "BRL",
 });
 
 function formatData(value) {
@@ -65,7 +74,9 @@ export default function AdminClienteCarteiraPage() {
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState(null);
 
-  const isRFForm = form.tipo_ativo === "Renda Fixa";
+  const isRFForm =
+    form.tipo_ativo === "Renda Fixa" || form.tipo_ativo === "Tesouro Direto";
+  const segmentosForm = segmentosDoTipo(form.tipo_ativo);
 
   const loadCarteira = useCallback(async () => {
     if (!id) return;
@@ -149,13 +160,18 @@ export default function AdminClienteCarteiraPage() {
     try {
       const payload = {
         tipo_ativo: form.tipo_ativo,
+        segmento: form.segmento,
+        moeda: form.moeda || "BRL",
         ticker: form.ticker,
         preco_medio: Number(String(form.preco_medio).replace(",", ".")),
         data: form.data,
       };
 
-      if (form.tipo_ativo === "Renda Fixa") {
-        payload.indexador = form.indexador;
+      if (isRFForm) {
+        payload.indexador =
+          form.indexador ||
+          indexadorDoSegmento(form.tipo_ativo, form.segmento) ||
+          "Pré-fixado";
         payload.taxa_contratada = Number(
           String(form.taxa_contratada).replace(",", ".")
         );
@@ -239,6 +255,16 @@ export default function AdminClienteCarteiraPage() {
         </p>
       )}
 
+      {!loadingCarteira ? (
+        <motion.section
+          variants={staggerContainer}
+          initial="hidden"
+          animate="show"
+        >
+          <CarteiraCharts aportes={aportes} precos={precos} />
+        </motion.section>
+      ) : null}
+
       <motion.div variants={staggerContainer} initial="hidden" animate="show">
         <motion.div
           variants={staggerItem}
@@ -248,7 +274,8 @@ export default function AdminClienteCarteiraPage() {
             <table className="min-w-full text-left text-sm">
               <thead className="bg-slate-950/70 text-xs uppercase tracking-wide text-slate-500">
                 <tr>
-                  <th className="px-6 py-3.5 font-medium">Tipo</th>
+                    <th className="px-6 py-3.5 font-medium">Tipo</th>
+                  <th className="px-6 py-3.5 font-medium">Segmento</th>
                   <th className="px-6 py-3.5 font-medium">Ticker / Nome</th>
                   <th className="px-6 py-3.5 font-medium">Quantidade</th>
                   <th className="px-6 py-3.5 font-medium">Preço médio</th>
@@ -263,7 +290,7 @@ export default function AdminClienteCarteiraPage() {
                 {loadingCarteira ? (
                   <tr>
                     <td
-                      colSpan={7}
+                      colSpan={8}
                       className="px-6 py-12 text-center text-slate-500"
                     >
                       Atualizando carteira...
@@ -272,7 +299,7 @@ export default function AdminClienteCarteiraPage() {
                 ) : aportes.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={7}
+                      colSpan={8}
                       className="px-6 py-12 text-center text-slate-500"
                     >
                       Nenhum aporte registrado. Use &quot;Novo Aporte&quot; para
@@ -330,6 +357,9 @@ export default function AdminClienteCarteiraPage() {
                       >
                         <td className="px-6 py-4 text-slate-300">
                           {aporte.tipo_ativo || "—"}
+                        </td>
+                        <td className="px-6 py-4 text-slate-400">
+                          {segmentoDoAporte(aporte)}
                         </td>
                         <td className="px-6 py-4 font-medium text-white">
                           {ticker || aporte.ticker || aporte.ativo || "—"}
@@ -413,50 +443,119 @@ export default function AdminClienteCarteiraPage() {
             </div>
 
             <form onSubmit={handleSaveAporte} className="mt-6 space-y-4">
-              <div>
-                <label
-                  htmlFor="tipo_ativo"
-                  className="block text-xs font-medium text-slate-400"
-                >
-                  Tipo de Ativo
-                </label>
-                <select
-                  id="tipo_ativo"
-                  required
-                  value={form.tipo_ativo}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, tipo_ativo: e.target.value }))
-                  }
-                  className="mt-1.5 w-full rounded-lg border border-slate-700 bg-slate-950/60 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/25"
-                >
-                  {TIPOS_ATIVO.map((tipo) => (
-                    <option key={tipo} value={tipo}>
-                      {tipo}
-                    </option>
-                  ))}
-                </select>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label
+                    htmlFor="tipo_ativo"
+                    className="block text-xs font-medium text-slate-400"
+                  >
+                    Tipo de Ativo
+                  </label>
+                  <select
+                    id="tipo_ativo"
+                    required
+                    value={form.tipo_ativo}
+                    onChange={(e) => {
+                      const tipo = e.target.value;
+                      const segmento = segmentoPadrao(tipo, form.indexador);
+                      const idx =
+                        indexadorDoSegmento(tipo, segmento) || form.indexador;
+                      setForm((f) => ({
+                        ...f,
+                        tipo_ativo: tipo,
+                        segmento,
+                        indexador: idx,
+                      }));
+                    }}
+                    className="mt-1.5 w-full rounded-lg border border-slate-700 bg-slate-950/60 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/25"
+                  >
+                    {TIPOS_ATIVO.map((tipo) => (
+                      <option key={tipo} value={tipo}>
+                        {tipo}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="segmento"
+                    className="block text-xs font-medium text-slate-400"
+                  >
+                    Segmento
+                  </label>
+                  <select
+                    id="segmento"
+                    required
+                    value={form.segmento}
+                    onChange={(e) => {
+                      const segmento = e.target.value;
+                      const idx =
+                        indexadorDoSegmento(form.tipo_ativo, segmento) ||
+                        form.indexador;
+                      setForm((f) => ({
+                        ...f,
+                        segmento,
+                        indexador: idx,
+                      }));
+                    }}
+                    className="mt-1.5 w-full rounded-lg border border-slate-700 bg-slate-950/60 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/25"
+                  >
+                    {segmentosForm.map((seg) => (
+                      <option key={seg} value={seg}>
+                        {seg}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
-              <div>
-                <label
-                  htmlFor="ticker"
-                  className="block text-xs font-medium text-slate-400"
-                >
-                  Ticker
-                </label>
-                <input
-                  id="ticker"
-                  type="text"
-                  required
-                  value={form.ticker}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, ticker: e.target.value }))
-                  }
-                  className="mt-1.5 w-full rounded-lg border border-slate-700 bg-slate-950/60 px-3 py-2.5 text-sm uppercase text-white outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/25"
-                  placeholder={
-                    isRFForm ? "CDB BANCO X, TESOURO..." : "PETR4, MXRF11..."
-                  }
-                />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label
+                    htmlFor="ticker"
+                    className="block text-xs font-medium text-slate-400"
+                  >
+                    Ticker / Nome
+                  </label>
+                  <input
+                    id="ticker"
+                    type="text"
+                    required
+                    value={form.ticker}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, ticker: e.target.value }))
+                    }
+                    className="mt-1.5 w-full rounded-lg border border-slate-700 bg-slate-950/60 px-3 py-2.5 text-sm uppercase text-white outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/25"
+                    placeholder={
+                      form.tipo_ativo === "Tesouro Direto"
+                        ? "TESOURO IPCA+ 2035"
+                        : isRFForm
+                          ? "CDB BANCO X, LCI..."
+                          : "PETR4, MXRF11..."
+                    }
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="moeda"
+                    className="block text-xs font-medium text-slate-400"
+                  >
+                    Moeda
+                  </label>
+                  <select
+                    id="moeda"
+                    value={form.moeda}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, moeda: e.target.value }))
+                    }
+                    className="mt-1.5 w-full rounded-lg border border-slate-700 bg-slate-950/60 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/25"
+                  >
+                    <option value="BRL">BRL</option>
+                    <option value="USD">USD</option>
+                    <option value="EUR">EUR</option>
+                  </select>
+                </div>
               </div>
 
               {isRFForm ? (
@@ -466,7 +565,7 @@ export default function AdminClienteCarteiraPage() {
                       htmlFor="indexador"
                       className="block text-xs font-medium text-slate-400"
                     >
-                      Indexador
+                      Indexador (marcação na curva)
                     </label>
                     <select
                       id="indexador"

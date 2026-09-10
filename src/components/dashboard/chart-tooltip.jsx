@@ -6,7 +6,7 @@ import { formatBRL } from "@/lib/cliente";
  * Tooltip dark glass para Recharts.
  * Uso: <Tooltip content={<ChartTooltip />} cursor={{ fill: "rgba(148,163,184,0.08)" }} />
  */
-export function ChartTooltip({ active, payload, label }) {
+export function ChartTooltip({ active, payload, label, valueFormat }) {
   if (!active || !payload?.length) return null;
 
   return (
@@ -19,10 +19,11 @@ export function ChartTooltip({ active, payload, label }) {
           const raw = entry?.value;
           const name = entry?.name ?? entry?.dataKey ?? "Valor";
           const isMoney =
-            typeof name === "string" &&
-            /valor|patrim|preço|preco|aport|total|provento|dividendo|renda|recebido/i.test(
-              name
-            );
+            valueFormat === "brl" ||
+            (typeof name === "string" &&
+              /valor|patrim|preço|preco|aport|total|provento|dividendo|renda|recebido/i.test(
+                name
+              ));
 
           const display =
             typeof raw === "number"

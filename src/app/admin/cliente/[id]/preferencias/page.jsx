@@ -2,60 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-
-const MOMENTO_VIDA = [
-  "Acumulação agressiva de patrimônio",
-  "Transição para viver de renda (Aposentadoria)",
-  "Preservação de capital contra inflação",
-  "Sucessão patrimonial / Herança",
-  "Compra de imóvel ou bens de alto valor",
-  "Custear educação dos filhos",
-  "Reserva para ano sabático / Empreendedorismo",
-];
-
-const ESTRATEGIA_ACOES = [
-  "Foco exclusivo em Dividendos (Vacas Leiteiras)",
-  "Foco em Crescimento e Valorização (Growth / Small Caps)",
-  "Setores Defensivos (Energia, Saneamento, Seguros, Bancos)",
-  "Setores Cíclicos (Varejo, Commodities, Construção)",
-  "Exposição ao Dólar / BDRs / Ações Globais",
-  "Aceita investir em Estatais (Petrobras, Banco do Brasil, etc.)",
-];
-
-const TESES_FIIS = [
-  "FIIs de Papel / Recebíveis (Foco em dividendos altos, atrelados ao CDI/IPCA)",
-  "Galpões Logísticos (E-commerce e infraestrutura)",
-  "Shoppings Centers",
-  "Lajes Corporativas (Escritórios)",
-  "Fiagros (Exposição ao Agronegócio)",
-  "FIIs de Infraestrutura (Isentos de IR)",
-];
-
-const RESTRICOES = [
-  "ZERO Criptomoedas",
-  "ZERO Empresas Estatais (Risco político)",
-  "ZERO Varejo",
-  "ZERO Ativos sem liquidez diária",
-  "ZERO Setores polêmicos (Armas, Jogos de Azar)",
-];
-
-const emptyPreferencias = () => ({
-  momento_vida: [],
-  estrategia_acoes: [],
-  teses_fiis: [],
-  renda_fixa: {
-    indexador: "",
-    trava_acima_3_anos: "",
-    credito_privado: "",
-  },
-  restricoes: [],
-  mapeamento_qualitativo: {
-    expectativa_comportamento: "",
-    eventos_liquidez: "",
-    historico_vieses: "",
-    legado_protecao: "",
-  },
-});
+import {
+  ESTRATEGIA_ACOES,
+  MOMENTO_VIDA,
+  RESTRICOES,
+  TESES_FIIS,
+  emptyPreferencias,
+  normalizePreferencias,
+} from "@/lib/preferencias-investimento";
 
 export default function AdminPreferenciasPage() {
   const router = useRouter();
@@ -98,23 +52,9 @@ export default function AdminPreferenciasPage() {
 
         if (!cancelled) {
           setCliente(data.cliente);
-          const saved = data.cliente?.preferencias_investimento || {};
-          setPreferencias({
-            ...emptyPreferencias(),
-            ...saved,
-            renda_fixa: {
-              ...emptyPreferencias().renda_fixa,
-              ...(saved.renda_fixa || {}),
-            },
-            mapeamento_qualitativo: {
-              ...emptyPreferencias().mapeamento_qualitativo,
-              ...(saved.mapeamento_qualitativo || {}),
-            },
-            momento_vida: saved.momento_vida || [],
-            estrategia_acoes: saved.estrategia_acoes || [],
-            teses_fiis: saved.teses_fiis || [],
-            restricoes: saved.restricoes || [],
-          });
+          setPreferencias(
+            normalizePreferencias(data.cliente?.preferencias_investimento)
+          );
         }
       } catch (err) {
         if (!cancelled) {

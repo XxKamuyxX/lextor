@@ -7,11 +7,13 @@ import {
   isRendaFixa,
 } from "@/utils/calculosRendaFixa";
 import { UserShell } from "@/components/app/user-shell";
+import { CarteiraCharts } from "@/components/dashboard/carteira-charts";
 import {
   staggerContainer,
   staggerItem,
 } from "@/components/dashboard/motion-variants";
 import { useClientePainel } from "@/hooks/useClientePainel";
+import { segmentoDoAporte } from "@/lib/segmentos-carteira";
 
 function formatData(value) {
   if (!value) return "—";
@@ -49,7 +51,7 @@ export default function ClienteCarteiraPage() {
           <h1 className="text-2xl font-bold text-white">Carteira</h1>
           <p className="mt-1 text-sm text-slate-400">
             Seus ativos — ações/FIIs por cotação, renda fixa por marcação na
-            curva
+            curva. Somente visualização.
           </p>
         </div>
 
@@ -62,6 +64,14 @@ export default function ClienteCarteiraPage() {
           </p>
         )}
 
+        <motion.section
+          variants={staggerContainer}
+          initial="hidden"
+          animate="show"
+        >
+          <CarteiraCharts aportes={aportes} precos={precosAtuais} />
+        </motion.section>
+
         <motion.div variants={staggerContainer} initial="hidden" animate="show">
           <motion.div
             variants={staggerItem}
@@ -72,6 +82,7 @@ export default function ClienteCarteiraPage() {
                 <thead className="bg-slate-950/70 text-xs uppercase tracking-wide text-slate-500">
                   <tr>
                     <th className="px-6 py-3 font-medium">Tipo</th>
+                    <th className="px-6 py-3 font-medium">Segmento</th>
                     <th className="px-6 py-3 font-medium">Ticker / Nome</th>
                     <th className="px-6 py-3 font-medium">Quantidade</th>
                     <th className="px-6 py-3 font-medium">Preço médio</th>
@@ -83,7 +94,7 @@ export default function ClienteCarteiraPage() {
                   {aportes.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={6}
+                        colSpan={7}
                         className="px-6 py-10 text-center text-slate-500"
                       >
                         Nenhum aporte encontrado para este cliente.
@@ -124,6 +135,9 @@ export default function ClienteCarteiraPage() {
                         >
                           <td className="px-6 py-4 text-slate-300">
                             {aporte.tipo_ativo || aporte.tipo || "—"}
+                          </td>
+                          <td className="px-6 py-4 text-slate-400">
+                            {segmentoDoAporte(aporte)}
                           </td>
                           <td className="px-6 py-4 font-medium text-white">
                             {aporte.ticker || aporte.ativo || aporte.nome || "—"}

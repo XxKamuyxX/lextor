@@ -51,7 +51,7 @@ export function groupDividendosByMonth(rows = []) {
 }
 
 /**
- * Gráfico de efeito bola de neve — renda passiva mensal.
+ * Gráfico de renda passiva mensal (proventos agrupados por mês).
  *
  * @param {{
  *   clienteId?: string | null;
@@ -120,7 +120,7 @@ export function PassiveIncomeChart({
       <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 className="text-lg font-semibold text-white">
-            Renda Passiva — Efeito Bola de Neve
+            Renda Passiva
           </h2>
           <p className="mt-1 text-sm text-slate-400">
             Proventos recebidos agrupados por mês de pagamento

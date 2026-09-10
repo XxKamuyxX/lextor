@@ -10,6 +10,12 @@ import {
   isRendaFixa,
   valorAtualAporte,
 } from "@/utils/calculosRendaFixa";
+import {
+  SEGMENTOS_POR_TIPO,
+  TIPOS_ATIVO,
+  indexadorDoSegmento,
+  segmentoPadrao,
+} from "@/lib/segmentos-carteira";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -213,13 +219,11 @@ export async function POST(request: Request, { params }: Params) {
     const tipoAtivo = String(body.tipo_ativo ?? "").trim();
     const ticker = normalizaTicker(body.ticker);
     const dataAporte = String(body.data ?? body.data_aporte ?? "").trim();
-    const isRF = tipoAtivo === "Renda Fixa";
+    const isRF = isRendaFixa({ tipo_ativo: tipoAtivo });
+    const segmentoInformado = String(body.segmento ?? "").trim();
+    const moedaInformada = String(body.moeda ?? "BRL").trim().toUpperCase() || "BRL";
 
-    const quantidade = isRF
-      ? 1
-      : Number(body.quantidade);
-    const precoMedio = Number(body.preco_medio ?? body.valor_aporte);
-    const indexador = String(body.indexador ?? "").trim();
+    let indexador = String(body.indexador ?? "").trim();
     const taxaContratada = Number(
       String(body.taxa_contratada ?? body.taxa ?? "").replace(",", ".")
     );
@@ -227,13 +231,36 @@ export async function POST(request: Request, { params }: Params) {
       body.data_vencimento ?? body.vencimento ?? ""
     ).trim();
 
-    const tiposValidos = ["Ação", "FII", "Renda Fixa"];
-    if (!tiposValidos.includes(tipoAtivo)) {
+    if (!TIPOS_ATIVO.includes(tipoAtivo)) {
       return NextResponse.json(
-        { message: "Tipo de ativo inválido. Use Ação, FII ou Renda Fixa." },
+        {
+          message:
+            "Tipo de ativo inválido. Use Ação, FII, Renda Fixa ou Tesouro Direto.",
+        },
         { status: 400 }
       );
     }
+
+    const segmentosValidos = SEGMENTOS_POR_TIPO[tipoAtivo] || [];
+    const segmento =
+      segmentoInformado ||
+      segmentoPadrao(tipoAtivo, indexador) ||
+      "Outros";
+
+    if (segmentosValidos.length && !segmentosValidos.includes(segmento)) {
+      return NextResponse.json(
+        { message: `Segmento inválido para ${tipoAtivo}.` },
+        { status: 400 }
+      );
+    }
+
+    if (isRF && !indexador) {
+      indexador = indexadorDoSegmento(tipoAtivo, segmento) || "Pré-fixado";
+    }
+
+    const quantidade = isRF ? 1 : Number(body.quantidade);
+    const precoMedio = Number(body.preco_medio ?? body.valor_aporte);
+
     if (!ticker) {
       return NextResponse.json(
         { message: "Informe o ticker do ativo." },
@@ -268,8 +295,7 @@ export async function POST(request: Request, { params }: Params) {
       if (!indexadoresValidos.includes(indexador)) {
         return NextResponse.json(
           {
-            message:
-              "Indexador inválido. Use Pré-fixado, CDI ou IPCA+.",
+            message: "Indexador inválido. Use Pré-fixado, CDI ou IPCA+.",
           },
           { status: 400 }
         );
@@ -300,6 +326,8 @@ export async function POST(request: Request, { params }: Params) {
       preco: precoMedio,
       valor_aportado: valorAportado,
       data_aporte: dataAporte,
+      segmento,
+      moeda: moedaInformada,
     };
 
     if (isRF) {
