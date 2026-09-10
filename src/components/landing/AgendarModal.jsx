@@ -16,6 +16,9 @@ const PATRIMONIO_OPCOES = [
   "Mais de R$ 1M",
 ];
 
+const MAKE_WEBHOOK_URL =
+  "https://hook.us2.make.com/vliyymsdieu1ribcm026mhwk3iiaacco";
+
 const initialForm = {
   nomeCompleto: "",
   email: "",
@@ -107,6 +110,13 @@ export function AgendarModal({ open, onClose, onSuccess }) {
       return;
     }
 
+    const payload = {
+      nome,
+      email,
+      telefone,
+      patrimonio,
+    };
+
     try {
       const { error: insertError } = await supabase
         .from("leads_contato")
@@ -122,6 +132,17 @@ export function AgendarModal({ open, onClose, onSuccess }) {
           "Não foi possível enviar sua solicitação. Tente novamente em instantes."
         );
         return;
+      }
+
+      // Webhook Make.com: falha de rede não bloqueia o sucesso no site
+      try {
+        await fetch(MAKE_WEBHOOK_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+      } catch {
+        // Ignora erros de rede/webhook — lead já foi salvo no Supabase
       }
 
       onSuccess?.(
