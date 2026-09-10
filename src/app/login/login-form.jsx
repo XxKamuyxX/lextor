@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { MENSAGEM_ACESSO_NEGADO, normalizeEmail } from "@/lib/acesso";
+import { AgendarModal } from "@/components/landing/AgendarModal";
 
 function mapSignInError(signInError) {
   const msg = signInError?.message?.toLowerCase() ?? "";
@@ -26,6 +27,8 @@ export default function LoginForm() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [agendarOpen, setAgendarOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState(null);
 
   useEffect(() => {
     const err = searchParams.get("error");
@@ -207,12 +210,25 @@ export default function LoginForm() {
           </p>
         )}
 
-        <p className="mt-6 text-center text-xs text-slate-600">
-          Ainda não é cliente?{" "}
-          <Link href="/" className="text-sky-500 hover:text-sky-400">
-            Conheça os planos
-          </Link>
-        </p>
+        <div className="mt-6 text-center">
+          <p className="text-xs text-slate-600">Ainda não é cliente?</p>
+          <button
+            type="button"
+            onClick={() => setAgendarOpen(true)}
+            className="mt-2 text-sm font-medium text-sky-500 transition hover:text-sky-400"
+          >
+            Agendar conversa com especialista
+          </button>
+        </div>
+
+        {successMessage && (
+          <p
+            role="status"
+            className="mt-5 rounded-lg border border-emerald-800/50 bg-emerald-950/40 px-4 py-3 text-sm text-emerald-300"
+          >
+            {successMessage}
+          </p>
+        )}
 
         <p className="mt-4 text-center text-sm text-slate-500">
           <Link href="/" className="transition hover:text-sky-400">
@@ -220,6 +236,12 @@ export default function LoginForm() {
           </Link>
         </p>
       </div>
+
+      <AgendarModal
+        open={agendarOpen}
+        onClose={() => setAgendarOpen(false)}
+        onSuccess={(message) => setSuccessMessage(message)}
+      />
     </div>
   );
 }

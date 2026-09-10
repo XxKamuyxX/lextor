@@ -11,6 +11,7 @@ import { Methodology } from "@/components/landing/Methodology";
 import { Faq } from "@/components/landing/Faq";
 import { SecurityProtocol } from "@/components/landing/SecurityProtocol";
 import { AuthCodeRedirect } from "@/components/auth-code-redirect";
+import { AgendarProvider } from "@/components/landing/AgendarModal";
 
 // Evita HTML estático desatualizado após deploy (causava CSS 404 na Hostinger).
 export const dynamic = "force-dynamic";
@@ -18,22 +19,24 @@ export const revalidate = 0;
 
 export default function HomePage() {
   return (
-    <div className="flex min-h-screen flex-col bg-black text-white">
-      <AuthCodeRedirect />
-      <LandingHeader />
-      <main className="flex-1">
-        <HeroSection />
-        <PhilosophySection />
-        <FounderManifesto />
-        <ComparativeTable />
-        <TargetProfile />
-        <Solutions />
-        <DashboardTeaser />
-        <Methodology />
-        <Faq />
-        <SecurityProtocol />
-      </main>
-      <LandingFooter />
-    </div>
+    <AgendarProvider>
+      <div className="flex min-h-screen flex-col overflow-x-hidden bg-black text-white">
+        <AuthCodeRedirect />
+        <LandingHeader />
+        <main className="flex-1">
+          <HeroSection />
+          <PhilosophySection />
+          <FounderManifesto />
+          <ComparativeTable />
+          <TargetProfile />
+          <Solutions />
+          <DashboardTeaser />
+          <Methodology />
+          <Faq />
+          <SecurityProtocol />
+        </main>
+        <LandingFooter />
+      </div>
+    </AgendarProvider>
   );
 }

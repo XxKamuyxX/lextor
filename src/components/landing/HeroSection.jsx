@@ -1,10 +1,13 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useAgendar } from "@/components/landing/AgendarModal";
 
 export function HeroSection() {
+  const { openAgendar } = useAgendar();
+
   return (
-    <section className="relative overflow-hidden bg-black px-6 pb-24 pt-20 sm:pb-32 sm:pt-28">
+    <section className="relative overflow-hidden bg-black px-4 pb-24 pt-20 sm:px-6 sm:pb-32 sm:pt-28">
       <div
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(29,78,216,0.22)_0%,_transparent_55%)]"
         aria-hidden
@@ -54,12 +57,13 @@ export function HeroSection() {
           transition={{ duration: 0.6, delay: 0.24 }}
           className="mt-12"
         >
-          <a
-            href="mailto:contato@alexjdantas.com?subject=Agendar%20Sess%C3%A3o%20de%20Alinhamento"
+          <button
+            type="button"
+            onClick={openAgendar}
             className="inline-flex items-center rounded-full bg-blue-700 px-8 py-4 text-sm font-semibold text-white shadow-xl shadow-blue-950/40 transition hover:bg-blue-800"
           >
             Agendar Sessão de Alinhamento
-          </a>
+          </button>
         </motion.div>
       </div>
     </section>

@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 const blocks = [
   {
     title: "O Seu Perfil",
-    text: "Desenhado para profissionais, executivos e empresários com renda superior a R$ 15.000 mensais ou capital disponível para alocação a partir de R$ 100.000.",
+    text: "Desenhado para profissionais, executivos e empresários com renda mensal superior a R$ 10.000 ou capital disponível para alocação a partir de R$ 100.000.",
   },
   {
     title: "O Seu Desafio",

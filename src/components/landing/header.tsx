@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import { Logo } from "@/components/landing/logo";
+import { useAgendar } from "@/components/landing/AgendarModal";
 
 const nav = [
   { href: "#filosofia", label: "Filosofia" },
@@ -11,9 +14,11 @@ const nav = [
 ];
 
 export function LandingHeader() {
+  const { openAgendar } = useAgendar();
+
   return (
     <header className="sticky top-0 z-50 border-b border-white/5 bg-black/80 backdrop-blur-xl">
-      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6 lg:px-8">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-2 px-4 sm:h-20 sm:px-6 lg:px-8">
         <Logo size="sm" />
 
         <nav className="hidden items-center gap-8 lg:flex">
@@ -28,19 +33,21 @@ export function LandingHeader() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-3">
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
           <Link
             href="/login"
-            className="hidden rounded-full border border-blue-500/30 px-5 py-2.5 text-sm font-medium text-blue-300 transition hover:border-blue-400/50 hover:bg-blue-500/10 sm:inline-flex"
+            className="inline-flex rounded-full border border-blue-500/30 px-3 py-2 text-xs font-medium text-blue-300 transition hover:border-blue-400/50 hover:bg-blue-500/10 sm:px-5 sm:py-2.5 sm:text-sm"
           >
-            Área do cliente
+            <span className="sm:hidden">Login</span>
+            <span className="hidden sm:inline">Área do cliente</span>
           </Link>
-          <a
-            href="mailto:contato@alexjdantas.com?subject=Agendar%20Sess%C3%A3o%20de%20Alinhamento"
-            className="rounded-full bg-blue-700 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-950/40 transition hover:bg-blue-800"
+          <button
+            type="button"
+            onClick={openAgendar}
+            className="rounded-full bg-blue-700 px-3 py-2 text-xs font-semibold text-white shadow-lg shadow-blue-950/40 transition hover:bg-blue-800 sm:px-5 sm:py-2.5 sm:text-sm"
           >
             Agendar
-          </a>
+          </button>
         </div>
       </div>
     </header>
