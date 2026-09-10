@@ -37,7 +37,6 @@ export function LandingHeader() {
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
           <InstallPwaButton
             label="Baixar App"
-            showMobileBanner
             className="inline-flex rounded-full border border-white/20 px-2.5 py-2 text-[11px] font-medium text-white transition hover:border-blue-400/50 hover:bg-white/5 sm:px-4 sm:text-sm"
           />
           <Link

@@ -15,6 +15,7 @@ import {
   X,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { InstallPwaButton } from "@/components/landing/InstallPwaButton";
 
 const NAV = [
   {
@@ -185,6 +186,12 @@ export function ClientSidebar({ email }) {
         </nav>
 
         <div className="space-y-2 border-t border-slate-800 p-3">
+          <div className="px-1">
+            <InstallPwaButton
+              label="Baixar App"
+              className="flex w-full items-center gap-3 rounded-lg border border-slate-700/80 px-3 py-2.5 text-left text-sm font-medium text-slate-300 transition hover:border-blue-700/40 hover:bg-blue-950/30 hover:text-white"
+            />
+          </div>
           {email ? (
             <p className="truncate px-3 text-xs text-slate-500">{email}</p>
           ) : null}
