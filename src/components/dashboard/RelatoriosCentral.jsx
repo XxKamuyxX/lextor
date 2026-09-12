@@ -282,13 +282,84 @@ export function RelatoriosCentral({
     setExporting(true);
     setExportError(null);
 
+    const scrollY = window.scrollY;
+    const scrollX = window.scrollX;
+    const restored = [];
+
+    // Pais com overflow (painel da prévia / shell) fazem o html2canvas
+    // capturar área vazia → PDF branco. Forçamos overflow visível só durante a captura.
+    let node = el;
+    while (node && node !== document.documentElement) {
+      const cs = window.getComputedStyle(node);
+      const overflow =
+        `${cs.overflow}|${cs.overflowX}|${cs.overflowY}`;
+      if (/auto|scroll|hidden/.test(overflow)) {
+        restored.push({
+          node,
+          overflow: node.style.overflow,
+          overflowX: node.style.overflowX,
+          overflowY: node.style.overflowY,
+          scrollTop: node.scrollTop,
+          scrollLeft: node.scrollLeft,
+        });
+        node.style.overflow = "visible";
+        node.style.overflowX = "visible";
+        node.style.overflowY = "visible";
+        node.scrollTop = 0;
+        node.scrollLeft = 0;
+      }
+      node = node.parentElement;
+    }
+
+    const prevEl = {
+      overflow: el.style.overflow,
+      height: el.style.height,
+      maxHeight: el.style.maxHeight,
+      transform: el.style.transform,
+    };
+    el.style.overflow = "visible";
+    el.style.height = "auto";
+    el.style.maxHeight = "none";
+    el.style.transform = "none";
+
+    window.scrollTo(0, 0);
+
     try {
+      // Garante layout estável antes do screenshot
+      await new Promise((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(resolve))
+      );
+
+      const width = Math.ceil(el.scrollWidth);
+      const height = Math.ceil(el.scrollHeight);
+
       const canvas = await html2canvas(el, {
         scale: 2,
         useCORS: true,
         backgroundColor: "#ffffff",
         logging: false,
+        scrollX: 0,
+        scrollY: 0,
+        x: 0,
+        y: 0,
+        width,
+        height,
+        windowWidth: width,
+        windowHeight: height,
+        onclone: (_doc, cloned) => {
+          cloned.style.overflow = "visible";
+          cloned.style.height = "auto";
+          cloned.style.maxHeight = "none";
+          cloned.style.transform = "none";
+          cloned.style.boxShadow = "none";
+        },
       });
+
+      if (!canvas.width || !canvas.height) {
+        throw new Error(
+          "A captura do relatório ficou vazia. Role até a prévia e tente de novo."
+        );
+      }
 
       const imgData = canvas.toDataURL("image/png");
       const pdf = new jsPDF({
@@ -324,6 +395,20 @@ export function RelatoriosCentral({
     } catch (err) {
       setExportError(err?.message || "Falha ao gerar o PDF.");
     } finally {
+      el.style.overflow = prevEl.overflow;
+      el.style.height = prevEl.height;
+      el.style.maxHeight = prevEl.maxHeight;
+      el.style.transform = prevEl.transform;
+
+      for (const item of restored) {
+        item.node.style.overflow = item.overflow;
+        item.node.style.overflowX = item.overflowX;
+        item.node.style.overflowY = item.overflowY;
+        item.node.scrollTop = item.scrollTop;
+        item.node.scrollLeft = item.scrollLeft;
+      }
+
+      window.scrollTo(scrollX, scrollY);
       setExporting(false);
     }
   }
@@ -425,7 +510,7 @@ export function RelatoriosCentral({
           <div className="overflow-auto rounded-2xl border border-slate-800 bg-slate-950/50 p-4 sm:p-6">
             <div
               id="documento-pdf"
-              className="mx-auto w-full max-w-[720px] overflow-hidden bg-white text-slate-900 shadow-xl"
+              className="mx-auto w-full max-w-[720px] overflow-visible bg-white text-slate-900 shadow-xl"
               style={{ minHeight: "calc(720px * 1.414)", height: "auto" }}
             >
               <header className="relative overflow-hidden bg-[#0a0a0a] px-8 pb-7 pt-8 text-white">
